@@ -154,10 +154,10 @@ generate_systemd_services() {
     log_info "项目目录: $PROJECT_DIR"
     log_info "当前用户: $CURRENT_USER"
     
-    # 检查services目录是否存在
+    # 检查services目录是否存在，不存在则创建
     if [[ ! -d "services" ]]; then
-        log_warning "services目录不存在，跳过服务文件生成"
-        return 0
+        log_info "创建services目录"
+        mkdir -p services
     fi
     
     # 遍历sensors目录，为每个传感器生成对应的服务文件
