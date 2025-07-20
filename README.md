@@ -27,7 +27,6 @@
 1. **基础环境**：
    ```bash
    sudo apt update && sudo apt install -y python3-pip mosquitto
-   pip3 install paho-mqtt Adafruit_DHT
    ```
 2. **项目结构**：
    ```
@@ -39,13 +38,13 @@
    ```
 3. **注册服务**（示例）：
    ```ini
-   # /etc/systemd/system/temp-pub.service
+   # /etc/systemd/system/dht22-publisher.service
    [Unit]
-   Description=Temperature Publisher
+   Description=DHT22 Temperature and Humidity MQTT Publisher
    After=network.target mosquitto.service
 
    [Service]
-   ExecStart=/usr/bin/python3 /opt/pi5-mqtt-ros/sensors/temp_pub.py
+   ExecStart=/opt/pi5-mqtt-ros/.venv/bin/python /opt/pi5-mqtt-ros/sensors/temperature_humidity/dht22_pub.py
    Restart=on-failure
 
    [Install]
@@ -53,8 +52,8 @@
    ```
    ```bash
    sudo systemctl daemon-reload
-   sudo systemctl enable temp-pub
-   sudo systemctl start temp-pub
+   sudo systemctl enable dht22-publisher
+   sudo systemctl start dht22-publisher
    ```
 
 ---
@@ -74,18 +73,38 @@
 
 ## 🚀 示例脚本概览
 
-### sensors/temp\_pub.py
+### sensors/temperature\_humidity/dht22\_pub.py
 
 ```python
 # 负责读取 DHT22 温湿度并发布到 MQTT
 # 引入配置与公用模块，实现可插拔
+# 支持自动重连、健康状态监控、数据验证
 ```
 
-### actuators/buzzer\_sub.py
+### sensors/temperature\_humidity/dht22\_monitor.py
 
 ```python
-# 订阅 actuator/buzzer 主题，控制 GPIO 蜂鸣器
+# 订阅 sensor/dht22 主题，实时显示温湿度数据
+# 支持数据验证、异常检测、统计信息
 ```
+
+### 快速开始
+
+1. **运行安装脚本**（自动创建虚拟环境）：
+   ```bash
+   chmod +x install.sh
+   ./install.sh
+   ```
+
+2. **启动DHT22发布服务**：
+   ```bash
+   sudo systemctl start dht22-publisher
+   ```
+
+3. **监控数据**（可选）：
+   ```bash
+   python3 sensors/temperature_humidity/dht22_monitor.py
+   ```
 
 *完整示例请见 **`sensors/`** 与 **`actuators/`** 目录*。
 

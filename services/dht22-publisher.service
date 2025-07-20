@@ -1,0 +1,28 @@
+[Unit]
+Description=DHT22 Temperature and Humidity MQTT Publisher
+Documentation=https://github.com/SwartzMss/RaspberryPierMix
+After=network.target mosquitto.service
+Wants=mosquitto.service
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/RaspberryPierMix
+ExecStart=/usr/bin/python3 /home/pi/RaspberryPierMix/sensors/temperature_humidity/dht22_pub.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+
+
+# 安全设置
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/pi/RaspberryPierMix
+
+[Install]
+WantedBy=multi-user.target 
