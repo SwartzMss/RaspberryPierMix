@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-DHT22 温湿度传感器 MQTT 发布者主程序
+温湿度传感器 MQTT 发布者主程序
 基于 Raspberry Pi 5 的 MQTT 发布/订阅架构
 """
 
@@ -29,7 +29,7 @@ def main():
         setup_logging()
         logger = logging.getLogger(__name__)
         
-        logger.info("启动DHT22温湿度传感器发布者...")
+        logger.info("启动温湿度传感器发布者...")
         
         # 创建发布者实例
         publisher = DHT22Publisher(config)
