@@ -211,6 +211,42 @@ EOF
     log_success "systemd服务文件生成完成"
 }
 
+# 安装并启动systemd服务
+install_and_start_services() {
+    log_info "安装并启动systemd服务..."
+    
+    # 检查services目录是否存在
+    if [[ ! -d "services" ]]; then
+        log_warning "services目录不存在，跳过服务安装"
+        return 0
+    fi
+    
+    # 匹配所有类型的服务文件
+    local service_files=(services/*.service)
+    if [[ ! -e "${service_files[0]}" ]]; then
+        log_warning "未找到任何 .service 文件，跳过服务安装"
+        return 0
+    fi
+    
+    for service_file in "${service_files[@]}"; do
+        service_name=$(basename "$service_file")
+        log_info "安装服务: $service_name"
+        sudo cp "$service_file" /etc/systemd/system/
+    done
+    
+    log_info "重新加载systemd服务配置..."
+    sudo systemctl daemon-reload
+    
+    for service_file in "${service_files[@]}"; do
+        service_name=$(basename "$service_file")
+        log_info "启用并启动服务: $service_name"
+        sudo systemctl enable "$service_name"
+        sudo systemctl restart "$service_name"
+    done
+    
+    log_success "所有systemd服务已安装并启动"
+}
+
 # 主函数
 main() {
     log_info "开始安装Raspberry Pier Mix 服务..."
@@ -220,6 +256,7 @@ main() {
     install_mosquitto
     setup_sensor_venvs
     generate_systemd_services
+    install_and_start_services
     
     log_success "安装完成！"
 }
