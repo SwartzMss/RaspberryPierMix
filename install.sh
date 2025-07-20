@@ -1,9 +1,7 @@
 #!/bin/bash
 # -*- coding: utf-8 -*-
-"""
-Raspberry Pier Mix 安装脚本
-用于部署DHT22温湿度传感器MQTT发布服务
-"""
+# Raspberry Pier Mix 安装脚本
+# 用于部署DHT22温湿度传感器MQTT发布服务
 
 set -e
 

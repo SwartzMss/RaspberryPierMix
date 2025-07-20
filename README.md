@@ -96,14 +96,14 @@
    ./install.sh
    ```
 
-2. **启动DHT22发布服务**：
+2. **安装Python依赖**：
    ```bash
-   sudo systemctl start dht22-publisher
+   pip3 install -r sensors/temperature_humidity/requirements.txt
    ```
 
-3. **监控数据**（可选）：
+3. **启动DHT22发布服务**：
    ```bash
-   python3 sensors/temperature_humidity/dht22_monitor.py
+   sudo systemctl start dht22-publisher
    ```
 
 *完整示例请见 **`sensors/`** 与 **`actuators/`** 目录*。
