@@ -197,7 +197,6 @@ StandardError=journal
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ProtectHome=true
 ReadWritePaths=${PROJECT_DIR}
 
 [Install]
