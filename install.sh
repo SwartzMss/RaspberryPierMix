@@ -171,7 +171,10 @@ generate_systemd_services() {
                 
                 log_info "生成服务文件: $service_file"
                 
-                # 生成服务文件内容
+                # 生成服务文件内容（使用绝对路径）
+                abs_sensor_dir="${PROJECT_DIR}/sensors/${sensor_name}"
+                abs_python="${abs_sensor_dir}/venv/bin/python"
+                abs_entry="${abs_sensor_dir}/${sensor_name}_pub.py"
                 cat > "$service_file" << EOF
 [Unit]
 Description=${sensor_name} MQTT Publisher
@@ -183,8 +186,8 @@ Wants=mosquitto.service
 Type=simple
 User=${CURRENT_USER}
 Group=${CURRENT_USER}
-WorkingDirectory=${PROJECT_DIR}/sensors/${sensor_name}
-ExecStart=./venv/bin/python ${sensor_name}_pub.py
+WorkingDirectory=${abs_sensor_dir}
+ExecStart=${abs_python} ${abs_entry}
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
