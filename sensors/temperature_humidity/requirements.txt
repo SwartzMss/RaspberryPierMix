@@ -1,2 +1,1 @@
-paho-mqtt>=1.6.1
 Adafruit_DHT>=1.4.2 

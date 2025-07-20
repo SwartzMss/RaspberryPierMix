@@ -78,6 +78,71 @@ install_mosquitto() {
     fi
 }
 
+# 设置传感器虚拟环境
+setup_sensor_venvs() {
+    log_info "设置传感器虚拟环境..."
+    
+    # 检查sensors目录是否存在
+    if [[ ! -d "sensors" ]]; then
+        log_warning "sensors目录不存在，跳过虚拟环境设置"
+        return 0
+    fi
+    
+    # 检查common目录是否存在
+    if [[ ! -d "common" ]]; then
+        log_warning "common目录不存在，跳过虚拟环境设置"
+        return 0
+    fi
+    
+    # 遍历sensors目录下的子目录
+    for sensor_dir in sensors/*/; do
+        if [[ -d "$sensor_dir" ]]; then
+            sensor_name=$(basename "$sensor_dir")
+            log_info "处理传感器: $sensor_name"
+            
+            # 检查requirements.txt是否存在
+            if [[ -f "${sensor_dir}requirements.txt" ]]; then
+                log_info "在 $sensor_name 中创建虚拟环境..."
+                
+                # 进入传感器目录
+                cd "$sensor_dir"
+                
+                # 创建虚拟环境
+                if [[ ! -d "venv" ]]; then
+                    python3 -m venv venv
+                    log_success "虚拟环境创建完成: $sensor_name"
+                else
+                    log_info "虚拟环境已存在: $sensor_name"
+                fi
+                
+                # 激活虚拟环境并安装依赖
+                log_info "安装依赖: $sensor_name"
+                source venv/bin/activate
+                pip install --upgrade pip
+                
+                # 先安装common的依赖
+                if [[ -f "../../common/requirements.txt" ]]; then
+                    log_info "安装common模块依赖"
+                    pip install -r ../../common/requirements.txt
+                fi
+                
+                # 再安装传感器自身的依赖
+                pip install -r requirements.txt
+                deactivate
+                
+                log_success "依赖安装完成: $sensor_name"
+                
+                # 返回原目录
+                cd - > /dev/null
+            else
+                log_warning "未找到requirements.txt文件: $sensor_name"
+            fi
+        fi
+    done
+    
+    log_success "传感器虚拟环境设置完成"
+}
+
 # 主函数
 main() {
     log_info "开始安装Raspberry Pier Mix 服务..."
@@ -85,6 +150,7 @@ main() {
     check_root
     check_system
     install_mosquitto
+    setup_sensor_venvs
     
     log_success "安装完成！"
 }
