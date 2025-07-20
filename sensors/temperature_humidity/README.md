@@ -12,7 +12,7 @@ temperature_humidity/
 ├── config.py           # 配置管理模块
 ├── sensor.py           # 传感器模块
 ├── publisher.py        # 发布者模块
-├── dht22_pub.py        # 主程序
+├── temperature_humidity_pub.py  # 主程序
 ├── requirements.txt    # 依赖文件
 └── README.md          # 说明文档
 ```
@@ -33,7 +33,7 @@ temperature_humidity/
 ### 4. publisher.py - 发布者模块
 处理MQTT发布逻辑，继承自common模块的MQTT基类。
 
-### 5. dht22_pub.py - 主程序
+### 5. temperature_humidity_pub.py - 主程序
 程序入口点，负责初始化各个模块并启动发布者。
 
 ## 配置说明
@@ -43,7 +43,9 @@ temperature_humidity/
 [mqtt]
 broker = localhost
 port = 1883
+# MQTT主题前缀，发布的消息主题格式为: {topic_prefix}/{sensor_type}
 topic_prefix = sensor
+# 数据发布间隔（秒）
 publish_interval = 30
 ```
 
@@ -51,19 +53,20 @@ publish_interval = 30
 ```ini
 [dht22]
 pin = 4
+# 传感器类型：DHT22 或 DHT11
 sensor_type = DHT22
+# 读取失败时的重试次数
 retry_count = 3
+# 重试间隔时间（秒）
 retry_delay = 2
 ```
-
-
 
 ## 使用方法
 
 1. 修改 `config.ini` 文件中的配置参数
 2. 运行主程序：
    ```bash
-   python dht22_pub.py
+   python temperature_humidity_pub.py
    ```
 
 ## 优势

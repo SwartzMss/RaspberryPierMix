@@ -43,7 +43,7 @@ class DHT22Publisher(MQTTPublisher):
     def publish_cycle(self):
         """发布周期 - 实现具体的DHT22数据发布逻辑"""
         # 读取传感器数据
-        data = self.sensor.read_data()
+        data = self.sensor.read()
         
         if data:
             # 发布传感器数据

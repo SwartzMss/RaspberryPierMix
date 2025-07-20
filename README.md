@@ -17,44 +17,52 @@
 
 - **硬件**：Raspberry Pi 5；DHTxx 温湿度传感器；蜂鸣器等（详细接线请参考子项目文档）。
 - **Broker**：Mosquitto 或任何兼容 MQTT 的服务端。
-- **语言与库**：Python 3.7+；`paho-mqtt`；各类传感器驱动（如 `Adafruit_DHT`）。
+- **语言与库**：Python 3.7+；`paho-mqtt`；各类传感器驱动（如 `adafruit-circuitpython-dht`）。
 - **系统服务**：systemd，用于管理节点进程。
 
 ---
 
-## 🔧 快速部署指南
+## 🔧 快速部署与服务管理
 
-1. **基础环境**：
+1. **运行安装脚本**（自动创建虚拟环境、生成并安装 systemd 服务）：
    ```bash
-   sudo apt update && sudo apt install -y python3-pip mosquitto
+   chmod +x install.sh
+   sudo ./install.sh
    ```
-2. **项目结构**：
-   ```
-   pi5-mqtt-ros/
-   ├─ services/             # systemd 单元文件
-   ├─ sensors/              # 传感器发布脚本
-   ├─ actuators/            # 执行器订阅脚本
-   └─ common/               # 配置与公用库
-   ```
-3. **注册服务**（示例）：
-   ```ini
-   # /etc/systemd/system/dht22-publisher.service
-   [Unit]
-   Description=DHT22 Temperature and Humidity MQTT Publisher
-   After=network.target mosquitto.service
 
-   [Service]
-   ExecStart=/opt/pi5-mqtt-ros/.venv/bin/python /opt/pi5-mqtt-ros/sensors/temperature_humidity/dht22_pub.py
-   Restart=on-failure
+2. **调试与管理 systemd 服务**
 
-   [Install]
-   WantedBy=multi-user.target
-   ```
-   ```bash
-   sudo systemctl daemon-reload
-   sudo systemctl enable dht22-publisher
-   sudo systemctl start dht22-publisher
-   ```
+   - **查看服务状态**
+     ```bash
+     sudo systemctl status temperature_humidity-publisher.service
+     ```
+   - **启动服务**
+     ```bash
+     sudo systemctl start temperature_humidity-publisher.service
+     ```
+   - **重启服务**
+     ```bash
+     sudo systemctl restart temperature_humidity-publisher.service
+     ```
+   - **停止服务**
+     ```bash
+     sudo systemctl stop temperature_humidity-publisher.service
+     ```
+   - **实时查看服务日志**
+     ```bash
+     sudo journalctl -u temperature_humidity-publisher.service -f
+     ```
+   - **修改服务文件后需重载配置**
+     ```bash
+     sudo systemctl daemon-reload
+     sudo systemctl restart temperature_humidity-publisher.service
+     ```
+
+   - **常见问题排查**
+     - 服务无法启动，status=203/EXEC：检查服务文件中的 ExecStart 和 WorkingDirectory 是否为绝对路径，且文件存在。
+     - 检查虚拟环境 venv/bin/python 是否存在。
+     - 检查服务文件属主和权限。
+     - 服务启动后无数据发布：查看日志，确认传感器和MQTT连接是否正常。手动激活虚拟环境并运行主程序，排查依赖问题。
 
 ---
 
@@ -73,7 +81,7 @@
 
 ## 🚀 示例脚本概览
 
-### sensors/temperature\_humidity/dht22\_pub.py
+### sensors/temperature_humidity/temperature_humidity_pub.py
 
 ```python
 # 负责读取 DHT22 温湿度并发布到 MQTT
@@ -81,38 +89,18 @@
 # 支持自动重连、健康状态监控、数据验证
 ```
 
-### sensors/temperature\_humidity/dht22\_monitor.py
+### sensors/temperature_humidity/monitor.py
 
 ```python
-# 订阅 sensor/dht22 主题，实时显示温湿度数据
+# 订阅 sensor/temperature_humidity 主题，实时显示温湿度数据
 # 支持数据验证、异常检测、统计信息
 ```
-
-### 快速开始
-
-1. **运行安装脚本**（自动创建虚拟环境）：
-   ```bash
-   chmod +x install.sh
-   ./install.sh
-   ```
-
-2. **安装Python依赖**：
-   ```bash
-   pip3 install -r sensors/temperature_humidity/requirements.txt
-   ```
-
-3. **启动DHT22发布服务**：
-   ```bash
-   sudo systemctl start dht22-publisher
-   ```
-
-*完整示例请见 **`sensors/`** 与 **`actuators/`** 目录*。
 
 ---
 
 ## 🔄 日志与监控
 
-- **日志输出**：各节点统一输出 JSON 格式日志，便于集中采集（ELK/Grafana）。
+- **日志输出**：各节点统一输出日志，便于集中采集（ELK/Grafana）。
 - **健康检查**：定期发布心跳，运维脚本可自动重启异常节点。
 
 ---
