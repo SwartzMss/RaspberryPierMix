@@ -143,6 +143,74 @@ setup_sensor_venvs() {
     log_success "传感器虚拟环境设置完成"
 }
 
+# 生成systemd服务文件
+generate_systemd_services() {
+    log_info "生成systemd服务文件..."
+    
+    # 获取当前工作目录的绝对路径
+    PROJECT_DIR=$(pwd)
+    CURRENT_USER=$(whoami)
+    
+    log_info "项目目录: $PROJECT_DIR"
+    log_info "当前用户: $CURRENT_USER"
+    
+    # 检查services目录是否存在
+    if [[ ! -d "services" ]]; then
+        log_warning "services目录不存在，跳过服务文件生成"
+        return 0
+    fi
+    
+    # 遍历sensors目录，为每个传感器生成对应的服务文件
+    for sensor_dir in sensors/*/; do
+        if [[ -d "$sensor_dir" ]]; then
+            sensor_name=$(basename "$sensor_dir")
+            
+            # 检查是否有主程序文件
+            if [[ -f "${sensor_dir}${sensor_name}_pub.py" ]]; then
+                service_file="services/${sensor_name}-publisher.service"
+                
+                log_info "生成服务文件: $service_file"
+                
+                # 生成服务文件内容
+                cat > "$service_file" << EOF
+[Unit]
+Description=${sensor_name} MQTT Publisher
+Documentation=https://github.com/SwartzMss/RaspberryPierMix
+After=network.target mosquitto.service
+Wants=mosquitto.service
+
+[Service]
+Type=simple
+User=${CURRENT_USER}
+Group=${CURRENT_USER}
+WorkingDirectory=${PROJECT_DIR}/sensors/${sensor_name}
+ExecStart=./venv/bin/python ${sensor_name}_pub.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# 安全设置
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=${PROJECT_DIR}
+
+[Install]
+WantedBy=multi-user.target
+EOF
+                
+                log_success "服务文件生成完成: $service_file"
+            else
+                log_warning "未找到主程序文件: ${sensor_name}_pub.py"
+            fi
+        fi
+    done
+    
+    log_success "systemd服务文件生成完成"
+}
+
 # 主函数
 main() {
     log_info "开始安装Raspberry Pier Mix 服务..."
@@ -151,6 +219,7 @@ main() {
     check_system
     install_mosquitto
     setup_sensor_venvs
+    generate_systemd_services
     
     log_success "安装完成！"
 }
