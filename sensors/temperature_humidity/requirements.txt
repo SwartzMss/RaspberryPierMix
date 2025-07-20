@@ -1,1 +1,2 @@
-Adafruit_DHT>=1.4.2 
+adafruit-circuitpython-dht>=4.0.9
+lgpio>=0.2.2.0
