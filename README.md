@@ -101,13 +101,6 @@
 # 支持自动重连、健康状态监控、数据验证
 ```
 
-### sensors/temperature_humidity/monitor.py
-
-```python
-# 订阅 sensor/temperature_humidity 主题，实时显示温湿度数据
-# 支持数据验证、异常检测、统计信息
-```
-
 ### actuators/buzzer/buzzer_sub.py
 
 ```python
