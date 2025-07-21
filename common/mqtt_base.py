@@ -68,7 +68,7 @@ class MQTTBase:
         logging.info(f"收到信号 {signum}，正在关闭...")
         self.stop()
     
-    def publish_message(self, topic: str, message: Dict[str, Any], qos: int = 1, retain: bool = True) -> bool:
+    def publish_message(self, topic: str, message: Dict[str, Any], qos: int = 1, retain: bool = False) -> bool:
         """
         发布消息到指定主题
         
@@ -151,7 +151,7 @@ class MQTTPublisher(MQTTBase):
     
 
     
-    def publish_sensor_data(self, sensor_type: str, data: Dict[str, Any]):
+    def publish_sensor_data(self, sensor_type: str, data: Dict[str, Any],qos:int=1,retain:bool=False):
         """
         发布传感器数据
         
@@ -161,7 +161,7 @@ class MQTTPublisher(MQTTBase):
         """
         try:
             topic = f"{self.topic_prefix}/{sensor_type}"
-            self.publish_message(topic, data)
+            self.publish_message(topic, data,qos,retain)
         except Exception as e:
             logging.error(f"发布传感器数据时发生错误: {e}")
     

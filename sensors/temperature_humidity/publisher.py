@@ -48,7 +48,7 @@ class DHT22Publisher(MQTTPublisher):
         if data:
             # 发布传感器数据
             sensor_type = self.config.get('sensor_type', 'temperature_humidity')
-            self.publish_sensor_data(sensor_type, data)
+            self.publish_sensor_data(sensor_type, data, retain=True)
             logger.info(f"已发布温湿度数据: 温度={data['temperature']}°C, 湿度={data['humidity']}%")
         else:
             logger.warning("跳过本次发布，传感器数据读取失败")
