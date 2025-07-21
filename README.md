@@ -96,6 +96,12 @@
 # 支持数据验证、异常检测、统计信息
 ```
 
+### actuators/buzzer/buzzer_sub.py
+
+```python
+# 订阅 actuator/buzzer 主题，根据指令控制蜂鸣器鸣叫
+```
+
 ---
 
 ## 🔄 日志与监控
