@@ -29,7 +29,8 @@ class DHT22Sensor:
 
     def read(self) -> Optional[Dict[str, float]]:
         """
-        读取传感器数据，返回{'temperature': float, 'humidity': float}，失败返回None
+        读取传感器数据，返回{'temperature': float, 'humidity': float, 'timestamp': int}，
+        其中 `timestamp` 为自 Unix Epoch 起的 UTC 秒数。失败返回 None
         """
         for attempt in range(self.retry_count):
             try:
@@ -38,7 +39,8 @@ class DHT22Sensor:
                 if temperature is not None and humidity is not None:
                     data = {
                         'temperature': round(temperature, 2),
-                        'humidity': round(humidity, 2)
+                        'humidity': round(humidity, 2),
+                        'timestamp': int(time.time())  # UTC seconds since Unix Epoch
                     }
                     logger.debug(f"传感器数据读取成功: {data}")
                     return data

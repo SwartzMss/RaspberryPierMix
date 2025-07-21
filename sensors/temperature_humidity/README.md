@@ -29,6 +29,7 @@ temperature_humidity/
 
 ### 3. sensor.py - 传感器模块
 专门处理DHT22传感器的读取逻辑，包含重试机制和错误处理。
+从 `read()` 方法返回的数据中新增 `timestamp` 字段，记录读取时的 UTC 秒级时间戳（自 Unix Epoch 起的秒数）。
 
 ### 4. publisher.py - 发布者模块
 处理MQTT发布逻辑，继承自common模块的MQTT基类。
