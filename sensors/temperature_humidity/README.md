@@ -54,8 +54,8 @@ publish_interval = 30
 ```ini
 [dht22]
 pin = 4
-# 传感器类型：DHT22 或 DHT11
-sensor_type = DHT22
+# 传感器类型名称
+sensor_type = temperature_humidity
 # 读取失败时的重试次数
 retry_count = 3
 # 重试间隔时间（秒）

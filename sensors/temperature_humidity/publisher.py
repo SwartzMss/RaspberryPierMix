@@ -32,7 +32,7 @@ class DHT22Publisher(MQTTPublisher):
         # 初始化传感器
         sensor_config = {
             'pin': config.get('pin', 4),
-            'sensor_type': config.get('sensor_type', 'DHT22'),
+            'sensor_type': config.get('sensor_type', 'temperature_humidity'),
             'retry_count': config.get('retry_count', 3),
             'retry_delay': config.get('retry_delay', 2)
         }
