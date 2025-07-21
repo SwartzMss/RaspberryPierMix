@@ -64,6 +64,18 @@
      - 检查服务文件属主和权限。
      - 服务启动后无数据发布：查看日志，确认传感器和MQTT连接是否正常。手动激活虚拟环境并运行主程序，排查依赖问题。
 
+3. **手动调试与测试**
+
+   若仅需在命令行下验证发布和订阅，可按以下步骤操作：
+   
+   ```bash
+   mosquitto_sub -t sensor/temperature_humidity -v
+   ```
+   
+   ```bash
+   mosquitto_pub -t actuator/test -m '{"cmd": "ON", "id": "node1"}'
+   ```
+
 ---
 
 ## 📡 主题层与消息格式规范
