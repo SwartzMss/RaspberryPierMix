@@ -42,3 +42,29 @@ repeat = 2
    ```bash
    python buzzer_sub.py
    ```
+
+## 接口设计
+
+- **订阅主题**：`{topic_prefix}/buzzer`
+
+  `topic_prefix` 来自 `config.ini` 的 MQTT 配置，默认值 `actuator`。
+
+- **消息格式**：
+
+  ```json
+  {
+    "action": true,      // true 触发蜂鸣，false 停止
+    "params": {
+      "times": 3,        // 蜂鸣次数，可选
+      "interval": 0.2    // 间隔时长（秒），可选
+    }
+  }
+  ```
+
+  当 `action` 为 `true` 时，按照参数执行蜂鸣；`false` 则立即停止。
+
+- **示例**：
+
+  ```bash
+  mosquitto_pub -t actuator/buzzer -m '{"action": true, "params": {"times": 5, "interval": 0.1}}'
+  ```
