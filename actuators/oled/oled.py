@@ -22,12 +22,15 @@ class OLEDDisplay:
         draw = ImageDraw.Draw(image)
         temp_str = f"温度: {temperature:.1f}°C"
         humi_str = f"湿度: {humidity:.1f}%"
-        # 计算文本宽度，实现居中
-        temp_w, temp_h = draw.textsize(temp_str, font=self.font)
-        humi_w, humi_h = draw.textsize(humi_str, font=self.font)
+        # 用 textbbox 计算文本宽高，实现居中
+        temp_bbox = draw.textbbox((0, 0), temp_str, font=self.font)
+        temp_w = temp_bbox[2] - temp_bbox[0]
+        temp_h = temp_bbox[3] - temp_bbox[1]
+        humi_bbox = draw.textbbox((0, 0), humi_str, font=self.font)
+        humi_w = humi_bbox[2] - humi_bbox[0]
+        humi_h = humi_bbox[3] - humi_bbox[1]
         temp_x = (self.width - temp_w) // 2
         humi_x = (self.width - humi_w) // 2
-        # 上下各留8像素边距
         temp_y = 8
         humi_y = self.height // 2 + 4
         draw.text((temp_x, temp_y), temp_str, font=self.font, fill=255)
