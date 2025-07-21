@@ -68,7 +68,7 @@ class MQTTBase:
         logging.info(f"收到信号 {signum}，正在关闭...")
         self.stop()
     
-    def publish_message(self, topic: str, message: Dict[str, Any], qos: int = 1) -> bool:
+    def publish_message(self, topic: str, message: Dict[str, Any], qos: int = 1, retain: bool = True) -> bool:
         """
         发布消息到指定主题
         
@@ -76,13 +76,14 @@ class MQTTBase:
             topic: 主题
             message: 消息内容
             qos: 服务质量等级
+            retain: 是否保留消息
             
         Returns:
             发布是否成功
         """
         try:
             payload = json.dumps(message, ensure_ascii=False)
-            result = self.client.publish(topic, payload, qos=qos)
+            result = self.client.publish(topic, payload, qos=qos, retain=retain)
             
             if result.rc == mqtt.MQTT_ERR_SUCCESS:
                 logging.debug(f"消息已发布到主题 {topic}")
@@ -146,6 +147,7 @@ class MQTTPublisher(MQTTBase):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self.publish_interval = config.get('publish_interval', 30)
+        logging.info(f"MQTTPublisher初始化，发布主题前缀: {self.topic_prefix}/<sensor_type>")
     
 
     
@@ -165,8 +167,7 @@ class MQTTPublisher(MQTTBase):
             }
             
             topic = f"{self.topic_prefix}/{sensor_type}"
-            self.publish_message(topic, message, qos=1)
-            
+            self.publish_message(topic, message)
         except Exception as e:
             logging.error(f"发布传感器数据时发生错误: {e}")
     
