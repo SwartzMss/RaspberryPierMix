@@ -28,14 +28,19 @@ class BuzzerSubscriber(MQTTSubscriber):
         logger.info("Buzzer订阅者初始化完成")
 
     def handle_message(self, topic: str, payload: Dict[str, Any]):
-        cmd = payload.get('cmd', 'ON')
-        if cmd.upper() == 'ON':
-            duration = float(payload.get('duration', self.beep_duration))
-            repeat = int(payload.get('repeat', self.repeat))
-            logger.info(f"执行蜂鸣指令: duration={duration}, repeat={repeat}")
-            self.buzzer.beep(duration=duration, repeat=repeat)
+        action = payload.get('action')
+        if action is True:
+            params = payload.get('params', {})
+            interval = float(params.get('interval', self.beep_duration))
+            times = int(params.get('times', self.repeat))
+            logger.info(
+                f"执行蜂鸣指令: interval={interval}, times={times}")
+            self.buzzer.beep(duration=interval, repeat=times)
+        elif action is False:
+            logger.info("停止蜂鸣指令")
+            self.buzzer.stop()
         else:
-            logger.warning(f"未知指令: {cmd}")
+            logger.warning(f"未知指令: {payload}")
 
     def stop(self):
         super().stop()
