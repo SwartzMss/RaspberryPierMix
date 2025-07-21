@@ -143,6 +143,54 @@ setup_sensor_venvs() {
     log_success "传感器虚拟环境设置完成"
 }
 
+# 设置执行器虚拟环境
+setup_actuator_venvs() {
+    log_info "设置执行器虚拟环境..."
+
+    if [[ ! -d "actuators" ]]; then
+        log_warning "actuators目录不存在，跳过虚拟环境设置"
+        return 0
+    fi
+
+    if [[ ! -d "common" ]]; then
+        log_warning "common目录不存在，跳过虚拟环境设置"
+        return 0
+    fi
+
+    for act_dir in actuators/*/; do
+        if [[ -d "$act_dir" ]]; then
+            act_name=$(basename "$act_dir")
+            log_info "处理执行器: $act_name"
+
+            if [[ -f "${act_dir}requirements.txt" ]]; then
+                log_info "在 $act_name 中创建虚拟环境..."
+                cd "$act_dir"
+                if [[ ! -d "venv" ]]; then
+                    python3 -m venv venv
+                    log_success "虚拟环境创建完成: $act_name"
+                else
+                    log_info "虚拟环境已存在: $act_name"
+                fi
+                log_info "安装依赖: $act_name"
+                source venv/bin/activate
+                pip install --upgrade pip
+                if [[ -f "../../common/requirements.txt" ]]; then
+                    log_info "安装common模块依赖"
+                    pip install -r ../../common/requirements.txt
+                fi
+                pip install -r requirements.txt
+                deactivate
+                log_success "依赖安装完成: $act_name"
+                cd - > /dev/null
+            else
+                log_warning "未找到requirements.txt文件: $act_name"
+            fi
+        fi
+    done
+
+    log_success "执行器虚拟环境设置完成"
+}
+
 # 生成systemd服务文件
 generate_systemd_services() {
     log_info "生成systemd服务文件..."
@@ -209,6 +257,54 @@ EOF
             fi
         fi
     done
+
+    # 遍历actuators目录，为每个执行器生成对应的服务文件
+    for act_dir in actuators/*/; do
+        if [[ -d "$act_dir" ]]; then
+            act_name=$(basename "$act_dir")
+
+            if [[ -f "${act_dir}${act_name}_sub.py" ]]; then
+                service_file="services/${act_name}-subscriber.service"
+
+                log_info "生成服务文件: $service_file"
+
+                abs_act_dir="${PROJECT_DIR}/actuators/${act_name}"
+                abs_python="${abs_act_dir}/venv/bin/python"
+                abs_entry="${abs_act_dir}/${act_name}_sub.py"
+                cat > "$service_file" << EOF
+[Unit]
+Description=${act_name} MQTT Subscriber
+Documentation=https://github.com/SwartzMss/RaspberryPierMix
+After=network.target mosquitto.service
+Wants=mosquitto.service
+
+[Service]
+Type=simple
+User=${CURRENT_USER}
+Group=${CURRENT_USER}
+WorkingDirectory=${abs_act_dir}
+ExecStart=${abs_python} ${abs_entry}
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# 安全设置
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=${PROJECT_DIR}
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+                log_success "服务文件生成完成: $service_file"
+            else
+                log_warning "未找到主程序文件: ${act_name}_sub.py"
+            fi
+        fi
+    done
     
     log_success "systemd服务文件生成完成"
 }
@@ -257,6 +353,7 @@ main() {
     check_system
     install_mosquitto
     setup_sensor_venvs
+    setup_actuator_venvs
     generate_systemd_services
     install_and_start_services
     
