@@ -3,7 +3,7 @@
 import time
 import threading
 from typing import Optional
-from .interface import BuzzerInterface
+from interface import BuzzerInterface
 
 try:
     from gpiozero import Buzzer
