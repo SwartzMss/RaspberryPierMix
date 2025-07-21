@@ -42,7 +42,7 @@ class ConfigManager:
         """获取DHT22传感器配置"""
         return {
             'pin': self.config.getint('dht22', 'pin'),
-            'temperature_humidity': self.config.get('dht22', 'temperature_humidity'),
+            'sensor_type': self.config.get('dht22', 'sensor_type'),
             'retry_count': self.config.getint('dht22', 'retry_count'),
             'retry_delay': self.config.getint('dht22', 'retry_delay')
         }
