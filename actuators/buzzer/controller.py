@@ -3,7 +3,6 @@
 import logging
 import os
 import sys
-import time
 from typing import Dict, Any
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
@@ -35,7 +34,7 @@ class BuzzerSubscriber(MQTTSubscriber):
             times = int(params.get('times', self.repeat))
             logger.info(
                 f"执行蜂鸣指令: interval={interval}, times={times}")
-            self.buzzer.beep(duration=interval, repeat=times)
+            self.buzzer.beep_async(duration=interval, repeat=times)
         elif action is False:
             logger.info("停止蜂鸣指令")
             self.buzzer.stop()
