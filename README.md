@@ -67,19 +67,11 @@
 3. **手动调试与测试**
 
    若仅需在命令行下验证发布和订阅，可按以下步骤操作：
-   ```bash
-   # 进入传感器目录并启动发布脚本
-   cd sensors/temperature_humidity
-   source venv/bin/activate
-   python temperature_humidity_pub.py
-   ```
-
-   在另一终端监听发布结果：
+   
    ```bash
    mosquitto_sub -t sensor/temperature_humidity -v
    ```
-
-   也可以通过 `mosquitto_pub` 手动向其他主题发送测试消息：
+   
    ```bash
    mosquitto_pub -t actuator/test -m '{"cmd": "ON", "id": "node1"}'
    ```
