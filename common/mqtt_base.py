@@ -147,7 +147,7 @@ class MQTTPublisher(MQTTBase):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self.publish_interval = config.get('publish_interval', 30)
-        logging.info(f"MQTTPublisher初始化，发布主题前缀: {self.topic_prefix}/<sensor_type>")
+        
     
 
     
@@ -160,14 +160,8 @@ class MQTTPublisher(MQTTBase):
             data: 传感器数据
         """
         try:
-            message = {
-                'sensor_type': sensor_type,
-                'timestamp': int(time.time()),
-                'data': data
-            }
-            
             topic = f"{self.topic_prefix}/{sensor_type}"
-            self.publish_message(topic, message)
+            self.publish_message(topic, data)
         except Exception as e:
             logging.error(f"发布传感器数据时发生错误: {e}")
     
