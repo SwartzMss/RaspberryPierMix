@@ -83,7 +83,7 @@
 | 领域    | 主题前缀              | 格式示例                                 |
 | ----- | ----------------- | ------------------------------------ |
 | 传感器数据 | `sensor/{type}`   | `{"value": 23.5, "ts": 162}`         |
-| 执行器命令 | `actuator/{name}` | `{"cmd": "ON"/"OFF", "id": "node1"}` |
+| 执行器命令 | `actuator/{name}` | `{"action": true, "params": {"times": 3}}` |
 
 
 - **时间戳**：所有消息建议携带单位秒的 UTC 时间戳。
@@ -104,6 +104,17 @@
 ```python
 # 订阅 actuator/buzzer 主题，根据指令控制蜂鸣器鸣叫
 ```
+
+- **消息格式**：
+
+  ```json
+  {
+    "action": true,
+    "params": {"times": 3, "interval": 0.2}
+  }
+  ```
+
+  `action` 设为 `true` 时按参数鸣叫，设为 `false` 则停止当前蜂鸣。
 
 ---
 
