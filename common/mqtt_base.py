@@ -96,6 +96,18 @@ class MQTTBase:
             logging.error(f"发布消息时发生错误: {e}")
             return False
     
+    def publish_sensor_data(self, sensor_type: str, data: Dict[str, Any], qos: int = 1, retain: bool = False):
+        """
+        发布传感器数据
+        Args:
+            sensor_type: 传感器类型
+            data: 传感器数据
+        """
+        try:
+            topic = f"{self.topic_prefix}/{sensor_type}"
+            self.publish_message(topic, data, qos, retain)
+        except Exception as e:
+            logging.error(f"发布传感器数据时发生错误: {e}")
 
     
     def subscribe_topic(self, topic: str, qos: int = 1):
