@@ -3,38 +3,38 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 # -*- coding: utf-8 -*-
 """
-Button 按键事件传感器 MQTT 发布者主程序
+Button 按键事件传感器 MQTT 发布者主程序（gpiozero实现）
 """
 import logging
-import sys as _sys
-from typing import Dict, Any
-
+import time
+from gpiozero import Button
 from config import ConfigManager
-from button import ButtonSensor
 from mqtt_base import MQTTPublisher
 
 class ButtonPublisher(MQTTPublisher):
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config):
         super().__init__(config)
-        self.sensor = ButtonSensor(config)
-        logging.info("ButtonPublisher 初始化完成")
+        self.button_gpio = int(config.get('button_gpio', 17))
+        self.button = Button(self.button_gpio, pull_up=True, bounce_time=0.05)
+        self.button.when_pressed = self.on_pressed
+        logging.info("ButtonPublisher 初始化完成 (gpiozero)")
 
-    def publish_cycle(self):
-        event = self.sensor.read()
-        if event:
-            self.publish_sensor_data('button', event, retain=False)
-            logging.info(f"已发布按键事件: {event}")
-        import time; time.sleep(0.05)
-
-    def get_status(self) -> Dict[str, Any]:
-        return {
-            'sensor_info': self.sensor.get_sensor_info(),
-            'mqtt_config': {
-                'broker': self.broker_host,
-                'port': self.broker_port,
-                'topic_prefix': self.topic_prefix
-            }
+    def on_pressed(self):
+        payload = {
+            "event": "pressed",
+            "timestamp": int(time.time())
         }
+        self.publish_sensor_data('button', payload, retain=False)
+        logging.info("已发布按键事件到MQTT")
+
+    def run(self):
+        logging.info("ButtonPublisher 事件监听中...")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+
 
 def setup_logging() -> None:
     logging.basicConfig(
