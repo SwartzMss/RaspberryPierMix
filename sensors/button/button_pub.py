@@ -9,7 +9,6 @@ import logging
 import time
 from gpiozero import Button
 from config import ConfigManager
-from mqtt_base import MQTTPublisher
 from publish import ButtonPublisher, setup_logging
 
 def main():
