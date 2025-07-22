@@ -98,6 +98,32 @@
 # 负责读取 DHT22 温湿度并发布到 MQTT
 # 引入配置与公用模块，实现可插拔
 ```
+- **消息格式**：
+
+  ```json
+  {
+    "temperature": 25.1,
+    "humidity": 40.2,
+    "timestamp": 1710000000
+  }
+  ```
+
+
+### sensors/button/button_pub.py
+
+```python
+# 负责检测物理按键事件并发布到 MQTT
+# 仅在按键被按下时发布事件型消息，结构与温湿度传感器一致
+```
+
+- **消息格式**：
+
+  ```json
+  {
+    "event": "pressed",
+    "timestamp": 1710000000
+  }
+  ```
 
 ### actuators/buzzer/buzzer_sub.py
 
