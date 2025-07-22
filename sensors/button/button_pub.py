@@ -50,9 +50,9 @@ def main():
         logger = logging.getLogger(__name__)
         logger.info("启动Button按键事件传感器发布者...")
         publisher = ButtonPublisher(config)
-        status = publisher.get_status()
-        logger.info(f"传感器信息: {status['sensor_info']}")
-        logger.info(f"MQTT配置: {status['mqtt_config']}")
+        # status = publisher.get_status()
+        # logger.info(f"传感器信息: {status['sensor_info']}")
+        # logger.info(f"MQTT配置: {status['mqtt_config']}")
         publisher.run()
     except FileNotFoundError as e:
         print(f"配置文件错误: {e}")
