@@ -27,14 +27,6 @@ class ButtonPublisher(MQTTPublisher):
         self.publish_sensor_data('button', payload, retain=False)
         logging.info("已发布按键事件到MQTT")
 
-    def run(self):
-        logging.info("ButtonPublisher 事件监听中...")
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            pass
-
 
 def setup_logging() -> None:
     logging.basicConfig(
