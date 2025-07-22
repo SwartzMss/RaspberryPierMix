@@ -347,6 +347,12 @@ install_and_start_services() {
 
 # 主函数
 main() {
+    # 清理 pyc 缓存和 __pycache__ 目录
+    log_info "清理 Python 缓存文件..."
+    find . -name "*.pyc" -delete
+    find . -name "__pycache__" -type d -exec rm -r {} +
+    log_success "Python 缓存清理完成"
+
     log_info "开始安装Raspberry Pier Mix 服务..."
     
     check_root
@@ -356,12 +362,6 @@ main() {
     setup_actuator_venvs
     generate_systemd_services
     install_and_start_services
-    
-    # 清理 pyc 缓存和 __pycache__ 目录
-    log_info "清理 Python 缓存文件..."
-    find . -name "*.pyc" -delete
-    find . -name "__pycache__" -type d -exec rm -r {} +
-    log_success "Python 缓存清理完成"
     
     log_success "安装完成！"
 }
