@@ -12,12 +12,12 @@ from typing import Dict, Any
 # 添加common目录到路径
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 
-from mqtt_base import MQTTPublisher
+from mqtt_base import PeriodicPublisher
 from sensor import DHT22Sensor
 
 logger = logging.getLogger(__name__)
 
-class DHT22Publisher(MQTTPublisher):
+class DHT22Publisher(PeriodicPublisher):
     """DHT22温湿度传感器发布者"""
     
     def __init__(self, config: Dict[str, Any]):

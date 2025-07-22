@@ -9,9 +9,9 @@ import logging
 import time
 from gpiozero import Button
 from config import ConfigManager
-from mqtt_base import MQTTPublisher
+from mqtt_base import EventPublisher
 
-class ButtonPublisher(MQTTPublisher):
+class ButtonPublisher(EventPublisher):
     def __init__(self, config):
         super().__init__(config)
         self.button_gpio = int(config.get('button_gpio', 17))

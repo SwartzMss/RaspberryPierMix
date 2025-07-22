@@ -256,3 +256,47 @@ class MQTTSubscriber(MQTTBase):
             logging.error(f"运行过程中发生错误: {e}")
         finally:
             self.stop() 
+
+class EventPublisher(MQTTBase):
+    """事件驱动型发布者基类，只负责连接和基础MQTT功能"""
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
+    def run(self):
+        if not self.connect():
+            logging.error("无法连接到MQTT代理，退出")
+            return
+        self.running = True
+        logging.info("事件驱动型发布者已启动")
+        try:
+            while self.running:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            logging.info("收到键盘中断信号")
+        except Exception as e:
+            logging.error(f"运行过程中发生错误: {e}")
+        finally:
+            self.stop()
+
+class PeriodicPublisher(MQTTBase):
+    """周期性发布者基类，定时调用 publish_cycle"""
+    def __init__(self, config: Dict[str, Any]):
+        super().__init__(config)
+        self.publish_interval = config.get('publish_interval', 30)
+    def run(self):
+        if not self.connect():
+            logging.error("无法连接到MQTT代理，退出")
+            return
+        self.running = True
+        logging.info(f"周期性发布者已启动，发布间隔: {self.publish_interval}秒")
+        try:
+            while self.running:
+                self.publish_cycle()
+                time.sleep(self.publish_interval)
+        except KeyboardInterrupt:
+            logging.info("收到键盘中断信号")
+        except Exception as e:
+            logging.error(f"运行过程中发生错误: {e}")
+        finally:
+            self.stop()
+    def publish_cycle(self):
+        raise NotImplementedError("子类必须重写 publish_cycle 方法") 
