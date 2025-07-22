@@ -1,9 +1,12 @@
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 # -*- coding: utf-8 -*-
 """
 Button 按键事件传感器 MQTT 发布者主程序
 """
 import logging
-import sys
+import sys as _sys
 from typing import Dict, Any
 
 from config import ConfigManager
