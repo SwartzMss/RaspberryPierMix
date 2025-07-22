@@ -141,56 +141,6 @@ class MQTTBase:
         self.disconnect()
         logging.info("MQTT客户端已停止")
 
-class MQTTPublisher(MQTTBase):
-    """MQTT发布者基类"""
-    
-    def __init__(self, config: Dict[str, Any]):
-        super().__init__(config)
-        self.publish_interval = config.get('publish_interval', 30)
-        
-    
-
-    
-    def publish_sensor_data(self, sensor_type: str, data: Dict[str, Any],qos:int=1,retain:bool=False):
-        """
-        发布传感器数据
-        
-        Args:
-            sensor_type: 传感器类型
-            data: 传感器数据
-        """
-        try:
-            topic = f"{self.topic_prefix}/{sensor_type}"
-            self.publish_message(topic, data,qos,retain)
-        except Exception as e:
-            logging.error(f"发布传感器数据时发生错误: {e}")
-    
-    def run(self):
-        """运行发布者主循环 - 子类需要重写"""
-        if not self.connect():
-            logging.error("无法连接到MQTT代理，退出")
-            return
-        
-        self.running = True
-        logging.info(f"MQTT发布者已启动，发布间隔: {self.publish_interval}秒")
-        
-        try:
-            while self.running:
-                # 子类需要重写此方法来实现具体的发布逻辑
-                self.publish_cycle()
-                time.sleep(self.publish_interval)
-                
-        except KeyboardInterrupt:
-            logging.info("收到键盘中断信号")
-        except Exception as e:
-            logging.error(f"运行过程中发生错误: {e}")
-        finally:
-            self.stop()
-    
-    def publish_cycle(self):
-        """发布周期 - 子类需要重写此方法"""
-        raise NotImplementedError("子类必须重写 publish_cycle 方法")
-
 class MQTTSubscriber(MQTTBase):
     """MQTT订阅者基类"""
     
