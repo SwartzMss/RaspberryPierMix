@@ -52,7 +52,7 @@ port = 1883
 # MQTT主题前缀，发布的消息主题格式为: {topic_prefix}/{sensor_type}
 topic_prefix = sensor
 # 运动检测保持时间（秒） - 检测到运动后多长时间内不重复发送
-motion_hold_time = 5
+motion_hold_time = 600
 ```
 
 ### 传感器配置
