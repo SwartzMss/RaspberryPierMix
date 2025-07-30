@@ -34,6 +34,9 @@ class PIRPublisher(EventPublisher):
         self.motion_hold_time = config.get('motion_hold_time', 5)
         self.last_publish_time = 0
         
+        # 状态跟踪（避免重复发布相同状态）
+        self.last_published_motion_state = None
+        
         # 初始化传感器
         sensor_config = {
             'pin': config.get('pin', 23),
@@ -43,15 +46,16 @@ class PIRPublisher(EventPublisher):
         self.sensor = PIRSensor(sensor_config)
         self.sensor_type = config.get('sensor_type', 'pir_motion')
         
-        # 设置运动检测和无运动回调
-        self.sensor.set_motion_callback(self._on_motion_detected)
-        self.sensor.set_no_motion_callback(self._on_no_motion_detected)
-        
-        logger.info("PIR发布者初始化完成")
+        logger.info("PIR发布者初始化完成（回调将在稳定期结束后设置）")
     
     def _on_motion_detected(self, motion_data: Dict[str, Any]):
         """运动检测回调函数"""
         current_time = time.time()
+        
+        # 检查状态是否真的改变了
+        if self.last_published_motion_state is True:
+            logger.debug("运动状态未改变，跳过发布")
+            return
         
         # 检查是否在保持时间内
         if current_time - self.last_publish_time < self.motion_hold_time:
@@ -61,18 +65,28 @@ class PIRPublisher(EventPublisher):
         # 发布运动检测数据
         self.publish_sensor_data(self.sensor_type, motion_data, retain=True)
         self.last_publish_time = current_time
+        self.last_published_motion_state = True
         
         logger.info(f"已发布运动检测数据: {motion_data}")
         
     def _on_no_motion_detected(self, no_motion_data: Dict[str, Any]):
         """无运动检测回调函数"""
+        # 检查状态是否真的改变了
+        if self.last_published_motion_state is False:
+            logger.debug("无运动状态未改变，跳过发布")
+            return
+        
         # 发布无运动状态数据
         self.publish_sensor_data(self.sensor_type, no_motion_data, retain=True)
+        self.last_published_motion_state = False
         logger.info(f"已发布无运动状态数据: {no_motion_data}")
     
     def start_sensor(self):
-        """启动传感器（基于gpiozero，无需手动启动）"""
-        logger.info("PIR传感器已就绪（gpiozero自动管理）")
+        """启动传感器（基于gpiozero，稳定期已在初始化时完成）"""
+        # 在稳定期结束后设置回调函数
+        self.sensor.set_motion_callback(self._on_motion_detected)
+        self.sensor.set_no_motion_callback(self._on_no_motion_detected)
+        logger.info("PIR传感器已就绪，回调函数已设置")
     
     def stop_sensor(self):
         """停止传感器"""
@@ -91,13 +105,16 @@ class PIRPublisher(EventPublisher):
         logger.info("PIR事件驱动发布者已启动，等待运动检测...")
         
         try:
-            # 发布初始状态
+            # 发布真实的初始状态（稳定期结束后的当前状态）
+            current_motion_state = self.sensor.read_current_state()
             initial_data = {
-                'motion_detected': False,
+                'motion_detected': current_motion_state,
                 'timestamp': int(time.time()),
                 'status': 'online'
             }
             self.publish_sensor_data(self.sensor_type, initial_data, retain=True)
+            self.last_published_motion_state = current_motion_state  # 更新状态跟踪
+            logger.info(f"已发布稳定期后的初始状态: motion_detected={current_motion_state}")
             
             # 主循环
             while self.running:
@@ -115,6 +132,7 @@ class PIRPublisher(EventPublisher):
                 'status': 'offline'
             }
             self.publish_sensor_data(self.sensor_type, offline_data, retain=True)
+            self.last_published_motion_state = False  # 更新状态跟踪
             
             self.stop_sensor()
             self.sensor.cleanup()

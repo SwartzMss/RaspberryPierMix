@@ -22,7 +22,8 @@ class ConfigManager:
         return {
             'broker': self.config.get('mqtt', 'broker'),
             'port': self.config.getint('mqtt', 'port'),
-            'topic': self.config.get('mqtt', 'topic')
+            'topic': self.config.get('mqtt', 'topic'),
+            'pir_topic': self.config.get('mqtt', 'pir_topic', fallback='sensor/pir_motion')
         }
 
     def get_oled_config(self) -> Dict[str, Any]:
