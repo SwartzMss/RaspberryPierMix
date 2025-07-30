@@ -138,7 +138,7 @@ class OLEDDisplay:
         except:
             small_font = self.font
         
-        # 在左半边垂直居中绘制小猫
+        # 在左半边垂直居中绘制小猫，但往左移一点
         line_height = 14
         total_height = len(cat_lines) * line_height
         start_y = (self.height - total_height) // 2
@@ -147,7 +147,8 @@ class OLEDDisplay:
             if line.strip():
                 bbox = draw.textbbox((0, 0), line, font=small_font)
                 text_width = bbox[2] - bbox[0]
-                x = (cat_width - text_width) // 2  # 在左半边居中
+                # 往左移8个像素，减少右边空间
+                x = max(2, (cat_width - text_width) // 2 - 8)
                 y = start_y + i * line_height
                 draw.text((x, y), line, font=small_font, fill=255)
         
@@ -168,26 +169,26 @@ class OLEDDisplay:
         # 右半边起始位置
         right_start_x = cat_width + 2  # 小间距
         
-        # 温度行 - 垂直居中上半部分
-        temp_y = 18
+        # 计算标签宽度，确保对齐
+        temp_label_bbox = draw.textbbox((0, 0), temp_label, font=label_font)
+        humi_label_bbox = draw.textbbox((0, 0), humi_label, font=label_font)
+        max_label_w = max(temp_label_bbox[2] - temp_label_bbox[0], 
+                         humi_label_bbox[2] - humi_label_bbox[0])
+        
+        # 温度行 - 往上移一点，增加与湿度的间距
+        temp_y = 12
         # 温度标签位置
         draw.text((right_start_x, temp_y), temp_label, font=label_font, fill=255)
-        # 计算温度标签宽度
-        temp_label_bbox = draw.textbbox((0, 0), temp_label, font=label_font)
-        temp_label_w = temp_label_bbox[2] - temp_label_bbox[0]
-        # 温度数值位置（紧跟标签后面）
-        temp_value_x = right_start_x + temp_label_w + 2
+        # 温度数值位置（使用固定的对齐位置）
+        temp_value_x = right_start_x + max_label_w + 3
         draw.text((temp_value_x, temp_y), temp_value, font=value_font, fill=255)
         
-        # 湿度行 - 垂直居中下半部分
-        humi_y = 38
+        # 湿度行 - 往下移一点，增加与温度的间距
+        humi_y = 45
         # 湿度标签位置
         draw.text((right_start_x, humi_y), humi_label, font=label_font, fill=255)
-        # 计算湿度标签宽度
-        humi_label_bbox = draw.textbbox((0, 0), humi_label, font=label_font)
-        humi_label_w = humi_label_bbox[2] - humi_label_bbox[0]
-        # 湿度数值位置（紧跟标签后面）
-        humi_value_x = right_start_x + humi_label_w + 2
+        # 湿度数值位置（使用相同的对齐位置）
+        humi_value_x = right_start_x + max_label_w + 3
         draw.text((humi_value_x, humi_y), humi_value, font=value_font, fill=255)
         
         self.device.display(image)
@@ -195,18 +196,25 @@ class OLEDDisplay:
     def _blink_eyes(self):
         """眼睛闪烁回调"""
         self.cat_eyes_open = not self.cat_eyes_open
+        # 如果有回调函数，调用它来重新绘制屏幕
+        if hasattr(self, '_blink_callback') and self._blink_callback:
+            self._blink_callback()
         # 设置下次闪烁
         self._schedule_blink()
 
     def _schedule_blink(self):
         """安排下次眼睛闪烁"""
-        # 随机间隔1-3秒闪烁一次（频率更高）
+        # 随机间隔0.5-1秒闪烁一次（超高频率眨眼）
         import random
-        interval = random.uniform(1.0, 3.0)
+        interval = random.uniform(0.5, 1.0)
         if self.blink_timer:
             self.blink_timer.cancel()
         self.blink_timer = threading.Timer(interval, self._blink_eyes)
         self.blink_timer.start()
+
+    def set_blink_callback(self, callback):
+        """设置眨眼时的回调函数"""
+        self._blink_callback = callback
 
     def start_cat_animation(self):
         """开始小猫眼睛闪烁动画"""

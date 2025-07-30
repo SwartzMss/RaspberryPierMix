@@ -31,6 +31,9 @@ class OLEDSubscriber:
         self.latest_temperature = None
         self.latest_humidity = None
         
+        # 设置小猫眨眼回调，用于重新绘制分屏显示
+        self.oled.set_blink_callback(self._redraw_split_display)
+        
         # 显示状态管理
         self.show_temp_mode = False  # 是否显示温湿度模式
         self.temp_timer = None       # 10分钟定时器
@@ -84,6 +87,11 @@ class OLEDSubscriber:
             self.oled.show_time()
             # 继续下次更新
             self._start_time_display()
+    
+    def _redraw_split_display(self):
+        """重新绘制分屏显示（小猫眨眼时的回调）"""
+        if self.show_temp_mode and self.latest_temperature is not None and self.latest_humidity is not None:
+            self.oled.show_split_display(self.latest_temperature, self.latest_humidity)
     
     def _stop_time_display(self):
         """停止时间显示定时器"""
