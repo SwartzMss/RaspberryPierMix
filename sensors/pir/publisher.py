@@ -8,6 +8,7 @@ import logging
 import sys
 import os
 import time
+import threading
 from typing import Dict, Any
 
 # 添加common目录到路径
@@ -34,6 +35,11 @@ class PIRPublisher(EventPublisher):
         self.motion_hold_time = config.get('motion_hold_time', 5)
         self.last_publish_time = 0
         
+        # 无运动状态发布控制
+        self.publish_no_motion = config.get('publish_no_motion', True)
+        self.no_motion_delay = config.get('no_motion_delay', 300)
+        self.no_motion_timer = None
+        
         # 初始化传感器
         sensor_config = {
             'pin': config.get('pin', 23),
@@ -45,7 +51,10 @@ class PIRPublisher(EventPublisher):
         
         # 设置运动检测和无运动回调
         self.sensor.set_motion_callback(self._on_motion_detected)
-        self.sensor.set_no_motion_callback(self._on_no_motion_detected)
+        if self.publish_no_motion:
+            self.sensor.set_no_motion_callback(self._on_no_motion_detected)
+        else:
+            logger.info("配置为不发布无运动状态，跳过无运动回调设置")
         
         logger.info("PIR发布者初始化完成")
     
@@ -66,8 +75,12 @@ class PIRPublisher(EventPublisher):
         
     def _on_no_motion_detected(self, no_motion_data: Dict[str, Any]):
         """无运动检测回调函数"""
+        if not self.publish_no_motion:
+            logger.debug("无运动状态检测到，但配置为不发布，跳过")
+            return
+        
         # 发布无运动状态数据
-        self.publish_sensor_data(self.sensor_type, no_motion_data, retain=True)
+        self.publish_sensor_data(self.sensor_type, no_motion_data, retain=False)
         logger.info(f"已发布无运动状态数据: {no_motion_data}")
     
     def start_sensor(self):
