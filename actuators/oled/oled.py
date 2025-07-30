@@ -57,9 +57,7 @@ class OLEDDisplay:
         cat_lines = [
             "  /\\_/\\  ",
             " ( o.o ) ",
-            "  > ^ <  ",
-            "",
-            "   喵~   "
+            "  > ^ <  "
         ]
         
         # 使用较小的字体绘制小猫
@@ -142,9 +140,7 @@ class OLEDDisplay:
         cat_lines = [
             "  /\\_/\\  ",
             " ( o.o ) " if self.cat_eyes_open else " ( -.-))",
-            "  > ^ <  ",
-            "",
-            "   喵~   "
+            "  > ^ <  "
         ]
         
         try:
