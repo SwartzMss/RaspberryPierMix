@@ -39,7 +39,7 @@ class PIRPublisher(EventPublisher):
     
     def _on_motion_detected(self, motion_data: Dict[str, Any]):
         """人体检测回调函数 - 简化版，每次检测到都发布"""
-        self.publish_sensor_data(self.sensor_type, motion_data, retain=False)
+        self.publish_sensor_data(self.sensor_type, motion_data, retain=True)
         logger.info(f"检测到人体，已发布: {motion_data}")
     
     def start_sensor(self):

@@ -83,46 +83,36 @@ class OLEDDisplay:
         self.device.display(image)
 
     def show_time(self):
-        """显示当前时间"""
+        """显示当前时间（只显示时分秒和星期）"""
         image = Image.new("1", (self.width, self.height), "black")
         draw = ImageDraw.Draw(image)
         
         now = datetime.datetime.now()
-        date_str = now.strftime("%Y-%m-%d")
         time_str = now.strftime("%H:%M:%S")
         weekday_str = now.strftime("%A")
         
         try:
             # 时间用大字体
-            time_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 24)
-            # 日期用中等字体
-            date_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 16)
-            # 星期用小字体
-            week_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 12)
+            time_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 28)
+            # 星期用中等字体
+            week_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 16)
         except:
-            time_font = date_font = week_font = self.font
+            time_font = week_font = self.font
         
-        # 计算时间位置（居中显示）
+        # 计算时间位置（居中显示，更靠上一点）
         time_bbox = draw.textbbox((0, 0), time_str, font=time_font)
         time_w = time_bbox[2] - time_bbox[0]
         time_x = (self.width - time_w) // 2
-        time_y = 15
+        time_y = 12  # 往上移动
         
-        # 日期位置
-        date_bbox = draw.textbbox((0, 0), date_str, font=date_font)
-        date_w = date_bbox[2] - date_bbox[0]
-        date_x = (self.width - date_w) // 2
-        date_y = 35
-        
-        # 星期位置
+        # 星期位置（更靠下一点）
         week_bbox = draw.textbbox((0, 0), weekday_str, font=week_font)
         week_w = week_bbox[2] - week_bbox[0]
         week_x = (self.width - week_w) // 2
-        week_y = 52
+        week_y = 48  # 往下移动
         
         # 绘制文本
         draw.text((time_x, time_y), time_str, font=time_font, fill=255)
-        draw.text((date_x, date_y), date_str, font=date_font, fill=255)
         draw.text((week_x, week_y), weekday_str, font=week_font, fill=255)
         
         self.device.display(image)
@@ -144,12 +134,12 @@ class OLEDDisplay:
         ]
         
         try:
-            small_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 10)
+            small_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 14)
         except:
             small_font = self.font
         
         # 在左半边垂直居中绘制小猫
-        line_height = 10
+        line_height = 14
         total_height = len(cat_lines) * line_height
         start_y = (self.height - total_height) // 2
         
@@ -162,32 +152,43 @@ class OLEDDisplay:
                 draw.text((x, y), line, font=small_font, fill=255)
         
         # === 右边绘制温湿度 ===
-        temp_str = f"{temperature:.1f}°C"
-        humi_str = f"{humidity:.1f}%"
+        temp_label = "温度:"
+        humi_label = "湿度:"
+        temp_value = f"{temperature:.1f}°C"
+        humi_value = f"{humidity:.1f}%"
         
         try:
-            temp_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 14)
+            # 标签用中等字体
+            label_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 12)
+            # 数值用稍大字体
+            value_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 16)
         except:
-            temp_font = self.font
+            label_font = value_font = self.font
         
-        # 温度位置（右半边）
-        temp_bbox = draw.textbbox((0, 0), temp_str, font=temp_font)
-        temp_w = temp_bbox[2] - temp_bbox[0]
-        temp_x = cat_width + (temp_width - temp_w) // 2  # 在右半边居中
-        temp_y = 20
+        # 右半边起始位置
+        right_start_x = cat_width + 2  # 小间距
         
-        # 湿度位置
-        humi_bbox = draw.textbbox((0, 0), humi_str, font=temp_font)
-        humi_w = humi_bbox[2] - humi_bbox[0]
-        humi_x = cat_width + (temp_width - humi_w) // 2
-        humi_y = 40
+        # 温度行 - 垂直居中上半部分
+        temp_y = 18
+        # 温度标签位置
+        draw.text((right_start_x, temp_y), temp_label, font=label_font, fill=255)
+        # 计算温度标签宽度
+        temp_label_bbox = draw.textbbox((0, 0), temp_label, font=label_font)
+        temp_label_w = temp_label_bbox[2] - temp_label_bbox[0]
+        # 温度数值位置（紧跟标签后面）
+        temp_value_x = right_start_x + temp_label_w + 2
+        draw.text((temp_value_x, temp_y), temp_value, font=value_font, fill=255)
         
-        # 绘制温湿度
-        draw.text((temp_x, temp_y), temp_str, font=temp_font, fill=255)
-        draw.text((humi_x, humi_y), humi_str, font=temp_font, fill=255)
-        
-        # 绘制分割线
-        draw.line([(cat_width, 0), (cat_width, self.height)], fill=255, width=1)
+        # 湿度行 - 垂直居中下半部分
+        humi_y = 38
+        # 湿度标签位置
+        draw.text((right_start_x, humi_y), humi_label, font=label_font, fill=255)
+        # 计算湿度标签宽度
+        humi_label_bbox = draw.textbbox((0, 0), humi_label, font=label_font)
+        humi_label_w = humi_label_bbox[2] - humi_label_bbox[0]
+        # 湿度数值位置（紧跟标签后面）
+        humi_value_x = right_start_x + humi_label_w + 2
+        draw.text((humi_value_x, humi_y), humi_value, font=value_font, fill=255)
         
         self.device.display(image)
 
@@ -199,9 +200,9 @@ class OLEDDisplay:
 
     def _schedule_blink(self):
         """安排下次眼睛闪烁"""
-        # 随机间隔2-5秒闪烁一次
+        # 随机间隔1-3秒闪烁一次（频率更高）
         import random
-        interval = random.uniform(2.0, 5.0)
+        interval = random.uniform(1.0, 3.0)
         if self.blink_timer:
             self.blink_timer.cancel()
         self.blink_timer = threading.Timer(interval, self._blink_eyes)
