@@ -167,7 +167,7 @@ class OLEDDisplay:
             label_font = value_font = self.font
         
         # 右半边起始位置和可用宽度
-        right_start_x = cat_width + 1  # 减少间距
+        right_start_x = cat_width - 6  # 进一步减少间距，让温湿度更靠左
         available_width = self.width - right_start_x - 2  # 右边留2像素边距
         
         # 计算各部分宽度
@@ -187,8 +187,8 @@ class OLEDDisplay:
         if total_needed > available_width:
             gap = max(1, available_width - max_label_w - max_value_w)
         
-        # 温度行 - 往上移一点，增加与湿度的间距
-        temp_y = 12
+        # 温度行 - 往上移更多，增加与湿度的间距
+        temp_y = 8
         draw.text((right_start_x, temp_y), temp_label, font=label_font, fill=255)
         temp_value_x = right_start_x + max_label_w + gap
         # 确保数值不超出右边界
@@ -196,8 +196,8 @@ class OLEDDisplay:
         temp_value_x = min(temp_value_x, max_temp_x)
         draw.text((temp_value_x, temp_y), temp_value, font=value_font, fill=255)
         
-        # 湿度行 - 往下移一点，增加与温度的间距
-        humi_y = 45
+        # 湿度行 - 往下移更多，增加与温度的间距
+        humi_y = 50
         draw.text((right_start_x, humi_y), humi_label, font=label_font, fill=255)
         humi_value_x = right_start_x + max_label_w + gap
         # 确保数值不超出右边界
