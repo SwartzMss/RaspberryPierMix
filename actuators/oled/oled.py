@@ -56,7 +56,7 @@ class OLEDDisplay:
         # 小猫头部图案，简洁可爱
         cat_lines = [
             "  /\\_/\\  ",
-            " ( o.o ) ",
+            " ( ^.^ ) ",
             "  > ^ <  "
         ]
         
@@ -129,7 +129,7 @@ class OLEDDisplay:
         # === 左边绘制小猫 ===
         cat_lines = [
             "  /\\_/\\  ",
-            " ( o.o ) " if self.cat_eyes_open else " ( -.-))",
+            " ( ^.^ ) " if self.cat_eyes_open else " ( -.- ) ",
             "  > ^ <  "
         ]
         
@@ -138,7 +138,7 @@ class OLEDDisplay:
         except:
             small_font = self.font
         
-        # 在左半边垂直居中绘制小猫，但往左移一点
+        # 在左半边垂直居中绘制小猫，适度往左移
         line_height = 14
         total_height = len(cat_lines) * line_height
         start_y = (self.height - total_height) // 2
@@ -147,8 +147,8 @@ class OLEDDisplay:
             if line.strip():
                 bbox = draw.textbbox((0, 0), line, font=small_font)
                 text_width = bbox[2] - bbox[0]
-                # 往左移8个像素，减少右边空间
-                x = max(2, (cat_width - text_width) // 2 - 8)
+                # 往左移4个像素，为右边留出更多空间
+                x = max(2, (cat_width - text_width) // 2 - 4)
                 y = start_y + i * line_height
                 draw.text((x, y), line, font=small_font, fill=255)
         
@@ -159,36 +159,50 @@ class OLEDDisplay:
         humi_value = f"{humidity:.1f}%"
         
         try:
-            # 标签用中等字体
-            label_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 12)
-            # 数值用稍大字体
-            value_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 16)
+            # 标签用小字体
+            label_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 10)
+            # 数值用中等字体，避免超出边界
+            value_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 12)
         except:
             label_font = value_font = self.font
         
-        # 右半边起始位置
-        right_start_x = cat_width + 2  # 小间距
+        # 右半边起始位置和可用宽度
+        right_start_x = cat_width + 1  # 减少间距
+        available_width = self.width - right_start_x - 2  # 右边留2像素边距
         
-        # 计算标签宽度，确保对齐
+        # 计算各部分宽度
         temp_label_bbox = draw.textbbox((0, 0), temp_label, font=label_font)
         humi_label_bbox = draw.textbbox((0, 0), humi_label, font=label_font)
+        temp_value_bbox = draw.textbbox((0, 0), temp_value, font=value_font)
+        humi_value_bbox = draw.textbbox((0, 0), humi_value, font=value_font)
+        
         max_label_w = max(temp_label_bbox[2] - temp_label_bbox[0], 
                          humi_label_bbox[2] - humi_label_bbox[0])
+        max_value_w = max(temp_value_bbox[2] - temp_value_bbox[0],
+                         humi_value_bbox[2] - humi_value_bbox[0])
+        
+        # 确保不超出边界，如果空间不够就紧凑排列
+        gap = 2
+        total_needed = max_label_w + gap + max_value_w
+        if total_needed > available_width:
+            gap = max(1, available_width - max_label_w - max_value_w)
         
         # 温度行 - 往上移一点，增加与湿度的间距
         temp_y = 12
-        # 温度标签位置
         draw.text((right_start_x, temp_y), temp_label, font=label_font, fill=255)
-        # 温度数值位置（使用固定的对齐位置）
-        temp_value_x = right_start_x + max_label_w + 3
+        temp_value_x = right_start_x + max_label_w + gap
+        # 确保数值不超出右边界
+        max_temp_x = self.width - temp_value_bbox[2] + temp_value_bbox[0] - 2
+        temp_value_x = min(temp_value_x, max_temp_x)
         draw.text((temp_value_x, temp_y), temp_value, font=value_font, fill=255)
         
         # 湿度行 - 往下移一点，增加与温度的间距
         humi_y = 45
-        # 湿度标签位置
         draw.text((right_start_x, humi_y), humi_label, font=label_font, fill=255)
-        # 湿度数值位置（使用相同的对齐位置）
-        humi_value_x = right_start_x + max_label_w + 3
+        humi_value_x = right_start_x + max_label_w + gap
+        # 确保数值不超出右边界
+        max_humi_x = self.width - humi_value_bbox[2] + humi_value_bbox[0] - 2
+        humi_value_x = min(humi_value_x, max_humi_x)
         draw.text((humi_value_x, humi_y), humi_value, font=value_font, fill=255)
         
         self.device.display(image)
