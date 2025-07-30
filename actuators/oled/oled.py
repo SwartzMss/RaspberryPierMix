@@ -159,10 +159,10 @@ class OLEDDisplay:
         humi_value = f"{humidity:.1f}%"
         
         try:
-            # 标签用小字体
-            label_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 10)
-            # 数值用中等字体，避免超出边界
-            value_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 12)
+            # 标签用稍大字体
+            label_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 12)
+            # 数值用更大字体，利用节省的垂直空间
+            value_font = ImageFont.truetype("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc", 14)
         except:
             label_font = value_font = self.font
         
@@ -187,8 +187,8 @@ class OLEDDisplay:
         if total_needed > available_width:
             gap = max(1, available_width - max_label_w - max_value_w)
         
-        # 温度行 - 往上移更多，增加与湿度的间距
-        temp_y = 8
+        # 温度行 - 垂直居中上半部分，减少与湿度的间距
+        temp_y = 18
         draw.text((right_start_x, temp_y), temp_label, font=label_font, fill=255)
         temp_value_x = right_start_x + max_label_w + gap
         # 确保数值不超出右边界
@@ -196,8 +196,8 @@ class OLEDDisplay:
         temp_value_x = min(temp_value_x, max_temp_x)
         draw.text((temp_value_x, temp_y), temp_value, font=value_font, fill=255)
         
-        # 湿度行 - 往下移更多，增加与温度的间距
-        humi_y = 50
+        # 湿度行 - 垂直居中下半部分，减少与温度的间距
+        humi_y = 40
         draw.text((right_start_x, humi_y), humi_label, font=label_font, fill=255)
         humi_value_x = right_start_x + max_label_w + gap
         # 确保数值不超出右边界
