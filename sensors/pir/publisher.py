@@ -59,7 +59,7 @@ class PIRPublisher(EventPublisher):
             return
         
         # 发布运动检测数据
-        self.publish_sensor_data(self.sensor_type, motion_data, retain=False)
+        self.publish_sensor_data(self.sensor_type, motion_data, retain=True)
         self.last_publish_time = current_time
         
         logger.info(f"已发布运动检测数据: {motion_data}")
@@ -67,7 +67,7 @@ class PIRPublisher(EventPublisher):
     def _on_no_motion_detected(self, no_motion_data: Dict[str, Any]):
         """无运动检测回调函数"""
         # 发布无运动状态数据
-        self.publish_sensor_data(self.sensor_type, no_motion_data, retain=False)
+        self.publish_sensor_data(self.sensor_type, no_motion_data, retain=True)
         logger.info(f"已发布无运动状态数据: {no_motion_data}")
     
     def start_sensor(self):

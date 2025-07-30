@@ -43,8 +43,9 @@ class PIRSensor:
         Args:
             config: 传感器配置字典
         """
-        self.pin = config.get('pin', 18)
+        self.pin = config.get('pin', 23)
         self.sensor_type = config.get('sensor_type', 'pir_motion')
+        self.stabilize_time = config.get('stabilize_time', 60)
         
         # 状态跟踪
         self.motion_detected = False
@@ -64,8 +65,9 @@ class PIRSensor:
         
         logger.info(f"初始化PIR传感器: Pin {self.pin}")
         
-        # 让传感器稳定
-        time.sleep(2)
+        # 让传感器稳定 - PIR传感器需要较长的稳定时间
+        logger.info(f"PIR传感器稳定中，请等待约{self.stabilize_time}秒...")
+        time.sleep(self.stabilize_time)
         logger.info("PIR传感器已就绪")
     
     def _on_motion_detected(self):

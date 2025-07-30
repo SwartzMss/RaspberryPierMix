@@ -42,7 +42,8 @@ class ConfigManager:
         """获取PIR传感器配置"""
         return {
             'pin': self.config.getint('pir', 'pin'),
-            'sensor_type': self.config.get('pir', 'sensor_type')
+            'sensor_type': self.config.get('pir', 'sensor_type'),
+            'stabilize_time': self.config.getint('pir', 'stabilize_time', fallback=60)
         }
     
     def get_all_config(self) -> Dict[str, Any]:
