@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-PIR红外传感器 MQTT 发布者主程序
-基于 Raspberry Pi 5 的 MQTT 发布/订阅架构
+简化版 PIR红外传感器 MQTT 发布者
+只发布人体检测事件
 """
 
 import logging
 import sys
-from typing import Dict, Any
 
 from config import ConfigManager
 from publisher import PIRPublisher
@@ -29,15 +28,12 @@ def main():
         setup_logging()
         logger = logging.getLogger(__name__)
         
-        logger.info("启动PIR红外传感器发布者...")
+        logger.info("启动PIR人体检测发布者...")
+        logger.info(f"传感器配置: Pin {config.get('pin')}, 稳定时间 {config.get('stabilize_time')}秒")
+        logger.info(f"MQTT配置: {config.get('mqtt_broker')}:{config.get('mqtt_port')}, 主题前缀: {config.get('topic_prefix')}")
         
         # 创建发布者实例
         publisher = PIRPublisher(config)
-        
-        # 显示状态信息
-        status = publisher.get_status()
-        logger.info(f"传感器信息: {status['sensor_info']}")
-        logger.info(f"MQTT配置: {status['mqtt_config']}")
         
         # 运行发布者
         publisher.run()

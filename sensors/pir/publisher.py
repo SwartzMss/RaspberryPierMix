@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-PIR发布者模块
-专门处理MQTT发布逻辑，使用事件驱动方式
+简化版 PIR发布者模块
+只发布人体检测事件
 """
 
 import logging
@@ -19,78 +19,33 @@ from sensor import PIRSensor
 logger = logging.getLogger(__name__)
 
 class PIRPublisher(EventPublisher):
-    """PIR红外传感器发布者（事件驱动）"""
+    """简化版 PIR红外传感器发布者"""
     
     def __init__(self, config: Dict[str, Any]):
-        """
-        初始化发布者
-        
-        Args:
-            config: 配置字典，包含MQTT和传感器参数
-        """
+        """初始化发布者"""
         super().__init__(config)
         
-        # 运动保持时间（避免频繁发送相同消息）
-        self.motion_hold_time = config.get('motion_hold_time', 5)
-        self.last_publish_time = 0
-        
-        # 状态跟踪（避免重复发布相同状态）
-        self.last_published_motion_state = None
-        
-        # 初始化传感器
+        # 传感器配置
         sensor_config = {
             'pin': config.get('pin', 23),
-            'sensor_type': config.get('sensor_type', 'pir_motion')
+            'sensor_type': config.get('sensor_type', 'pir_motion'),
+            'stabilize_time': config.get('stabilize_time', 60)
         }
         
         self.sensor = PIRSensor(sensor_config)
         self.sensor_type = config.get('sensor_type', 'pir_motion')
         
-        logger.info("PIR发布者初始化完成（回调将在稳定期结束后设置）")
+        logger.info("PIR发布者初始化完成（稳定期已完成）")
     
     def _on_motion_detected(self, motion_data: Dict[str, Any]):
-        """运动检测回调函数"""
-        current_time = time.time()
-        
-        # 检查状态是否真的改变了
-        if self.last_published_motion_state is True:
-            logger.debug("运动状态未改变，跳过发布")
-            return
-        
-        # 检查是否在保持时间内
-        if current_time - self.last_publish_time < self.motion_hold_time:
-            logger.debug(f"运动检测在保持时间内，跳过发布（剩余: {self.motion_hold_time - (current_time - self.last_publish_time):.1f}秒）")
-            return
-        
-        # 发布运动检测数据
-        self.publish_sensor_data(self.sensor_type, motion_data, retain=True)
-        self.last_publish_time = current_time
-        self.last_published_motion_state = True
-        
-        logger.info(f"已发布运动检测数据: {motion_data}")
-        
-    def _on_no_motion_detected(self, no_motion_data: Dict[str, Any]):
-        """无运动检测回调函数"""
-        # 检查状态是否真的改变了
-        if self.last_published_motion_state is False:
-            logger.debug("无运动状态未改变，跳过发布")
-            return
-        
-        # 发布无运动状态数据
-        self.publish_sensor_data(self.sensor_type, no_motion_data, retain=True)
-        self.last_published_motion_state = False
-        logger.info(f"已发布无运动状态数据: {no_motion_data}")
+        """人体检测回调函数 - 简化版，每次检测到都发布"""
+        self.publish_sensor_data(self.sensor_type, motion_data, retain=False)
+        logger.info(f"检测到人体，已发布: {motion_data}")
     
     def start_sensor(self):
-        """启动传感器（基于gpiozero，稳定期已在初始化时完成）"""
-        # 在稳定期结束后设置回调函数
+        """启动传感器（稳定期已在初始化时完成）"""
         self.sensor.set_motion_callback(self._on_motion_detected)
-        self.sensor.set_no_motion_callback(self._on_no_motion_detected)
         logger.info("PIR传感器已就绪，回调函数已设置")
-    
-    def stop_sensor(self):
-        """停止传感器"""
-        logger.info("PIR传感器停止中...")
     
     def run(self):
         """运行发布者"""
@@ -102,20 +57,9 @@ class PIRPublisher(EventPublisher):
         self.start_sensor()
         
         self.running = True
-        logger.info("PIR事件驱动发布者已启动，等待运动检测...")
+        logger.info("PIR人体检测发布者已启动，等待运动检测...")
         
         try:
-            # 发布真实的初始状态（稳定期结束后的当前状态）
-            current_motion_state = self.sensor.read_current_state()
-            initial_data = {
-                'motion_detected': current_motion_state,
-                'timestamp': int(time.time()),
-                'status': 'online'
-            }
-            self.publish_sensor_data(self.sensor_type, initial_data, retain=True)
-            self.last_published_motion_state = current_motion_state  # 更新状态跟踪
-            logger.info(f"已发布稳定期后的初始状态: motion_detected={current_motion_state}")
-            
             # 主循环
             while self.running:
                 time.sleep(1)  # 保持主线程活跃
@@ -125,28 +69,6 @@ class PIRPublisher(EventPublisher):
         except Exception as e:
             logger.error(f"运行过程中发生错误: {e}")
         finally:
-            # 发布离线状态
-            offline_data = {
-                'motion_detected': False,
-                'timestamp': int(time.time()),
-                'status': 'offline'
-            }
-            self.publish_sensor_data(self.sensor_type, offline_data, retain=True)
-            self.last_published_motion_state = False  # 更新状态跟踪
-            
-            self.stop_sensor()
+            logger.info("正在停止PIR传感器...")
             self.sensor.cleanup()
             self.stop()
-    
-    def get_status(self) -> Dict[str, Any]:
-        """获取发布者状态"""
-        return {
-            'sensor_info': self.sensor.get_sensor_info(),
-            'mqtt_config': {
-                'broker': self.broker_host,
-                'port': self.broker_port,
-                'topic_prefix': self.topic_prefix,
-                'motion_hold_time': self.motion_hold_time
-            },
-            'last_publish_time': self.last_publish_time
-        }

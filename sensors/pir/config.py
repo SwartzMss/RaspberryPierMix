@@ -34,8 +34,7 @@ class ConfigManager:
         return {
             'mqtt_broker': self.config.get('mqtt', 'broker'),
             'mqtt_port': self.config.getint('mqtt', 'port'),
-            'topic_prefix': self.config.get('mqtt', 'topic_prefix'),
-            'motion_hold_time': self.config.getint('mqtt', 'motion_hold_time')
+            'topic_prefix': self.config.get('mqtt', 'topic_prefix')
         }
     
     def get_pir_config(self) -> Dict[str, Any]:
