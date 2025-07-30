@@ -15,9 +15,9 @@
 
 ## 📦 环境与依赖概览
 
-- **硬件**：Raspberry Pi 5；DHTxx 温湿度传感器；蜂鸣器等（详细接线请参考子项目文档）。
+- **硬件**：Raspberry Pi 5；DHTxx 温湿度传感器；PIR红外传感器（HC-SR501）；蜂鸣器等（详细接线请参考子项目文档）。
 - **Broker**：Mosquitto 或任何兼容 MQTT 的服务端。
-- **语言与库**：Python 3.7+；`paho-mqtt`；各类传感器驱动（如 `adafruit-circuitpython-dht`）。
+- **语言与库**：Python 3.7+；`paho-mqtt`；各类传感器驱动（如 `adafruit-circuitpython-dht`、`gpiozero`）。
 - **系统服务**：systemd，用于管理节点进程。
 
 ---
@@ -70,6 +70,7 @@
    
    ```bash
    mosquitto_sub -t sensor/temperature_humidity -v
+   mosquitto_sub -t sensor/pir_motion -v
    ```
    
    ```bash
@@ -82,7 +83,7 @@
 
 | 领域    | 主题前缀              | 格式示例                                 |
 | ----- | ----------------- | ------------------------------------ |
-| 传感器数据 | `sensor/{type}`   | `{"value": 23.5, "ts": 162}`         |
+| 传感器数据 | `sensor/{type}`   | `{"temperature": 23.5, "humidity": 40.2, "timestamp": 162}` / `{"motion_detected": true, "timestamp": 162}` |
 | 执行器命令 | `actuator/{name}` | `{"action": true, "params": {"times": 3}}` |
 
 
@@ -124,6 +125,25 @@
     "timestamp": 1710000000
   }
   ```
+
+### sensors/pir/pir_pub.py
+
+```python
+# 基于 gpiozero.MotionSensor 的 PIR 红外传感器
+# 检测运动状态变化并发布到 MQTT，支持运动检测和无运动状态
+# 参考用户示例代码实现，简洁高效
+```
+
+- **消息格式**：
+
+  ```json
+  {
+    "motion_detected": true,
+    "timestamp": 1710000000
+  }
+  ```
+
+  `motion_detected` 为 `true` 时表示检测到运动，为 `false` 时表示无运动状态。
 
 ### actuators/buzzer/buzzer_sub.py
 
