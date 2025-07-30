@@ -35,9 +35,7 @@ class ConfigManager:
             'mqtt_broker': self.config.get('mqtt', 'broker'),
             'mqtt_port': self.config.getint('mqtt', 'port'),
             'topic_prefix': self.config.get('mqtt', 'topic_prefix'),
-            'motion_hold_time': self.config.getint('mqtt', 'motion_hold_time'),
-            'publish_no_motion': self.config.getboolean('mqtt', 'publish_no_motion', fallback=True),
-            'no_motion_delay': self.config.getint('mqtt', 'no_motion_delay', fallback=300)
+            'motion_hold_time': self.config.getint('mqtt', 'motion_hold_time')
         }
     
     def get_pir_config(self) -> Dict[str, Any]:
