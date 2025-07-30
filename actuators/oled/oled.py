@@ -187,19 +187,23 @@ class OLEDDisplay:
         if total_needed > available_width:
             gap = max(1, available_width - max_label_w - max_value_w)
         
-        # 温度行 - 垂直居中上半部分，减少与湿度的间距
-        temp_y = 18
+        # 温度行 - 往上移，减少上方留白
+        temp_y = 12
         draw.text((right_start_x, temp_y), temp_label, font=label_font, fill=255)
-        temp_value_x = right_start_x + max_label_w + gap
+        # 温度数值位置（紧跟在温度标签后面，避免覆盖冒号）
+        temp_label_w = temp_label_bbox[2] - temp_label_bbox[0]
+        temp_value_x = right_start_x + temp_label_w + gap
         # 确保数值不超出右边界
         max_temp_x = self.width - temp_value_bbox[2] + temp_value_bbox[0] - 2
         temp_value_x = min(temp_value_x, max_temp_x)
         draw.text((temp_value_x, temp_y), temp_value, font=value_font, fill=255)
         
-        # 湿度行 - 垂直居中下半部分，减少与温度的间距
-        humi_y = 40
+        # 湿度行 - 相应调整位置，保持合适间距
+        humi_y = 34
         draw.text((right_start_x, humi_y), humi_label, font=label_font, fill=255)
-        humi_value_x = right_start_x + max_label_w + gap
+        # 湿度数值位置（紧跟在湿度标签后面，避免覆盖冒号）
+        humi_label_w = humi_label_bbox[2] - humi_label_bbox[0]
+        humi_value_x = right_start_x + humi_label_w + gap
         # 确保数值不超出右边界
         max_humi_x = self.width - humi_value_bbox[2] + humi_value_bbox[0] - 2
         humi_value_x = min(humi_value_x, max_humi_x)
