@@ -52,7 +52,7 @@ pip install -r requirements.txt
 
 ### 2. 校准传感器（必须！）
 ```bash
-python volume_pub.py --calibrate
+python volume_knob_pub.py --calibrate
 ```
 ⚠️ **注意：没有校准无法启动服务！**
 
@@ -79,13 +79,13 @@ cd sensors/volume_knob
 
 ### 3. 测试读数
 ```bash
-python volume_pub.py --test
+python volume_knob_pub.py --test
 ```
 转动电位器观察实时数值和音量条显示。
 
 ### 4. 正常运行
 ```bash
-python volume_pub.py
+python volume_knob_pub.py
 ```
 
 ## 📡 MQTT消息格式
@@ -120,7 +120,7 @@ python volume_pub.py
 ## 🔄 校准流程详解
 
 ```bash
-$ python volume_pub.py --calibrate
+$ python volume_knob_pub.py --calibrate
 
 🎛️  音量旋钮校准程序
 ========================================
@@ -200,7 +200,7 @@ cd sensors/volume_knob
 python check_calibration.py
 
 # 如果未校准，进行校准
-python volume_pub.py --calibrate
+python volume_knob_pub.py --calibrate
 ```
 
 ### install脚本提示未校准？
@@ -211,7 +211,7 @@ cd sensors/volume_knob
 ./calibrate.sh
 
 # 或手动校准
-python volume_pub.py --calibrate
+python volume_knob_pub.py --calibrate
 sudo systemctl start volume_knob-publisher
 ```
 
@@ -246,7 +246,7 @@ sudo i2cdetect -y 1
 # 应该看到ADS1115在地址 0x48
 
 # 测试模式检查读数
-python volume_pub.py --test
+python volume_knob_pub.py --test
 ```
 
 ## 📝 技术细节

@@ -100,7 +100,7 @@ class VolumeKnobSensor:
         if not self._validate_calibration():
             logger.error("❌ 音量旋钮未校准或校准值无效！")
             logger.error("📋 请先进行校准：")
-            logger.error("   python volume_pub.py --calibrate")
+            logger.error("   python volume_knob_pub.py --calibrate")
             logger.error("💡 或者参考文档： cat README.md")
             raise ValueError("音量旋钮未校准，无法启动服务")
         
