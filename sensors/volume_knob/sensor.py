@@ -97,7 +97,10 @@ class VolumeKnobSensor:
         self.last_volume = None
         
         # 🔥 关键：检查校准状态，拒绝无效值
-        if not self._validate_calibration():
+        # 在校准模式下跳过校准验证
+        skip_calibration_check = config.get('skip_calibration_check', False)
+        
+        if not skip_calibration_check and not self._validate_calibration():
             logger.error("❌ 音量旋钮未校准或校准值无效！")
             logger.error("📋 请先进行校准：")
             logger.error("   python volume_knob_pub.py --calibrate")
@@ -108,7 +111,11 @@ class VolumeKnobSensor:
         self._init_ads1115(config)
         
         logger.info(f"✅ 音量旋钮传感器初始化完成: 通道A{self.channel}")
-        logger.info(f"✅ 校准电压范围: {self.min_voltage:.3f}V - {self.max_voltage:.3f}V (范围: {self.max_voltage - self.min_voltage:.3f}V)")
+        
+        if not skip_calibration_check:
+            logger.info(f"✅ 校准电压范围: {self.min_voltage:.3f}V - {self.max_voltage:.3f}V (范围: {self.max_voltage - self.min_voltage:.3f}V)")
+        else:
+            logger.info("🔧 校准模式：跳过校准验证")
     
     def _init_ads1115(self, config: Dict[str, Any]):
         """初始化ADS1115"""

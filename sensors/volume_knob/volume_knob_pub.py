@@ -76,6 +76,11 @@ def main():
         config = config_manager.get_all_config()
         
         # 创建发布者实例
+        # 在校准模式下，跳过校准验证
+        if args.calibrate:
+            # 临时修改配置，跳过校准验证
+            config['skip_calibration_check'] = True
+            
         publisher = VolumeKnobPublisher(config, config_manager)
         
         if args.calibrate:
