@@ -352,6 +352,9 @@ install_and_start_services() {
             if [[ -f "$sensor_dir/calibrate.sh" ]]; then
                 log_info "检查 $module_name 模块校准状态..."
                 
+                # 增加可执行权限
+                chmod +x "$sensor_dir/calibrate.sh"
+                
                 # 检查校准状态（使用shell脚本检查）
                 if cd "$sensor_dir" && ./calibrate.sh --check >/dev/null 2>&1; then
                     log_success "$module_name 模块已校准，启动服务"
@@ -386,7 +389,7 @@ install_and_start_services() {
             echo "   cd sensors/$module"
             echo ""
             echo "2️⃣  运行校准脚本："
-            echo "   sudo sh calibrate.sh --force  # 强制重新校准"
+            echo "   ./calibrate.sh --force  # 强制重新校准"
             echo "   # 或者手动校准(进入venv环境): python ${module}_pub.py --calibrate"
             echo ""
             echo "3️⃣  启动服务："
