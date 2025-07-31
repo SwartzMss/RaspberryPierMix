@@ -320,8 +320,9 @@ class VolumeKnobSensor:
             return False
         
         # 检查是否为其他无效值
-        if self.min_voltage < 0 or self.max_voltage < 0:
-            logger.warning(f"⚠️  检测到负电压值: {self.min_voltage:.3f}V, {self.max_voltage:.3f}V")
+        # 允许小的负电压值（通常是由于ADC偏移或噪声造成的）
+        if self.min_voltage < -1.0 or self.max_voltage < -1.0:
+            logger.warning(f"⚠️  检测到负电压值过大: {self.min_voltage:.3f}V, {self.max_voltage:.3f}V")
             return False
             
         if self.min_voltage >= self.max_voltage:

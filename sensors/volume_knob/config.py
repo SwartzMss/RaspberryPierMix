@@ -73,8 +73,9 @@ class ConfigManager:
             ValueError: 如果校准值无效
         """
         # 验证校准值
-        if min_voltage < 0 or max_voltage < 0:
-            raise ValueError(f"无效的校准值（负数）: {min_voltage:.3f}V - {max_voltage:.3f}V")
+        # 允许小的负电压值（通常是由于ADC偏移或噪声造成的）
+        if min_voltage < -1.0 or max_voltage < -1.0:
+            raise ValueError(f"无效的校准值（负电压过大）: {min_voltage:.3f}V - {max_voltage:.3f}V")
             
         if min_voltage >= max_voltage:
             raise ValueError(f"无效的校准值（最小值大于等于最大值）: {min_voltage:.3f}V >= {max_voltage:.3f}V")
