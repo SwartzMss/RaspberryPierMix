@@ -335,14 +335,72 @@ install_and_start_services() {
     log_info "重新加载systemd服务配置..."
     sudo systemctl daemon-reload
     
+    # 🔥 新增：通用校准检测机制
+    local uncalibrated_modules=()
+    
     for service_file in "${service_files[@]}"; do
         service_name=$(basename "$service_file")
+        
+        # 从服务名获取模块名（去掉-publisher.service或-subscriber.service后缀）
+        module_name=$(echo "$service_name" | sed -E 's/-(publisher|subscriber)\.service$//')
+        
+        # 检查是否为传感器模块（只检测publisher服务）
+        if [[ "$service_name" == *"-publisher.service" ]]; then
+            sensor_dir="sensors/$module_name"
+            
+            # 检查是否有校准脚本
+            if [[ -f "$sensor_dir/calibrate.sh" ]]; then
+                log_info "检查 $module_name 模块校准状态..."
+                
+                # 检查校准状态（使用shell脚本检查）
+                if cd "$sensor_dir" && ./calibrate.sh --check >/dev/null 2>&1; then
+                    log_success "$module_name 模块已校准，启动服务"
+                    cd - > /dev/null
+                else
+                    log_error "$module_name 模块未校准！跳过启动此服务"
+                    uncalibrated_modules+=("$module_name")
+                    cd - > /dev/null
+                    # 仍然enable服务，但不启动
+                    sudo systemctl enable "$service_name"
+                    continue  # 跳过启动此服务
+                fi
+            fi
+        fi
+        
         log_info "启用并启动服务: $service_name"
         sudo systemctl enable "$service_name"
         sudo systemctl restart "$service_name"
     done
     
-    log_success "所有systemd服务已安装并启动"
+    # 如果有未校准的模块，显示校准指南
+    if [[ ${#uncalibrated_modules[@]} -gt 0 ]]; then
+        echo ""
+        echo "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨"
+        echo "🎛️  以下模块需要校准才能启动！"
+        echo "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨"
+        echo ""
+        
+        for module in "${uncalibrated_modules[@]}"; do
+            echo "📋 $module 模块校准步骤："
+            echo "1️⃣  进入模块目录："
+            echo "   cd sensors/$module"
+            echo ""
+            echo "2️⃣  运行校准脚本："
+            echo "   ./calibrate.sh          # 交互式校准"
+            echo "   ./calibrate.sh --force  # 强制重新校准"
+            echo "   # 或者手动校准: python ${module}_pub.py --calibrate"
+            echo ""
+            echo "3️⃣  启动服务："
+            echo "   sudo systemctl start $module-publisher"
+            echo ""
+            echo "----------------------------------------"
+        done
+        
+        echo "💡 校准只需做一次，结果会自动保存"
+        echo "🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨"
+    fi
+    
+    log_success "systemd服务安装完成"
 }
 
 # 主函数
