@@ -386,7 +386,6 @@ install_and_start_services() {
             echo "   cd sensors/$module"
             echo ""
             echo "2️⃣  运行校准脚本："
-            echo "   ./calibrate.sh          # 交互式校准"
             echo "   ./calibrate.sh --force  # 强制重新校准"
             echo "   # 或者手动校准: python ${module}_pub.py --calibrate"
             echo ""
