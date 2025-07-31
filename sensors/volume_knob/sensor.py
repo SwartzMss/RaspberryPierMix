@@ -263,7 +263,7 @@ class VolumeKnobSensor:
         
         def read_stable_voltage(prompt: str, samples: int = 10) -> float:
             print(prompt)
-            time.sleep(3)  # 给用户时间调整
+            input("按Enter键确认...")  # 等待用户确认
             
             readings = []
             for i in range(samples):
@@ -277,18 +277,15 @@ class VolumeKnobSensor:
             return sum(readings) / len(readings) if readings else 0.0
         
         # 校准最小值
-        min_voltage = read_stable_voltage("📍 请将电位器旋转到最小位置（逆时针到底），等待3秒...")
+        min_voltage = read_stable_voltage("📍 请将电位器旋转到最小位置（逆时针到底）")
         
         # 校准最大值
-        max_voltage = read_stable_voltage("📍 请将电位器旋转到最大位置（顺时针到底），等待3秒...")
-        
-        # 校准中间值验证
-        mid_voltage = read_stable_voltage("📍 请将电位器旋转到中间位置，等待3秒...")
+        max_voltage = read_stable_voltage("📍 请将电位器旋转到最大位置（顺时针到底）")
         
         result = {
             'min_voltage': round(min_voltage, 3),
             'max_voltage': round(max_voltage, 3),
-            'mid_voltage': round(mid_voltage, 3),
+            'mid_voltage': round((min_voltage + max_voltage) / 2, 3),
             'voltage_range': round(max_voltage - min_voltage, 3)
         }
         
