@@ -17,7 +17,7 @@ echo -e "${BLUE}🎛️  $MODULE_NAME 模块校准脚本${NC}"
 echo "========================================="
 
 # 检查配置文件是否存在
-if [[ ! -f "$CONFIG_FILE" ]]; then
+if [ ! -f "$CONFIG_FILE" ]; then
     echo -e "${RED}❌ 配置文件 $CONFIG_FILE 不存在${NC}"
     exit 1
 fi
@@ -33,18 +33,18 @@ check_calibration() {
     echo "  当前配置: min_voltage=$min_voltage, max_voltage=$max_voltage"
     
     # 检查是否为无效默认值
-    if [[ "$min_voltage" == "-1.0" && "$max_voltage" == "-1.0" ]]; then
+    if [ "$min_voltage" = "-1.0" ] && [ "$max_voltage" = "-1.0" ]; then
         echo -e "${RED}❌ 检测到无效默认值，需要校准${NC}"
         return 1
     fi
     
     # 检查值是否有效（非负数且min < max）
-    if (( $(echo "$min_voltage < 0" | bc -l) )) || (( $(echo "$max_voltage < 0" | bc -l) )); then
+    if [ "$(echo "$min_voltage < 0" | bc -l)" = "1" ] || [ "$(echo "$max_voltage < 0" | bc -l)" = "1" ]; then
         echo -e "${RED}❌ 检测到负值，需要重新校准${NC}"
         return 1
     fi
     
-    if (( $(echo "$min_voltage >= $max_voltage" | bc -l) )); then
+    if [ "$(echo "$min_voltage >= $max_voltage" | bc -l)" = "1" ]; then
         echo -e "${RED}❌ 最小值大于等于最大值，需要重新校准${NC}"
         return 1
     fi
@@ -59,22 +59,17 @@ run_calibration() {
     echo "----------------------------------------"
     
     # 查找校准程序
-    POSSIBLE_PROGRAMS=(
-        "${MODULE_NAME}_pub.py"
-        "publisher.py"
-        "${MODULE_NAME}.py"
-        "main.py"
-    )
+    POSSIBLE_PROGRAMS="${MODULE_NAME}_pub.py publisher.py ${MODULE_NAME}.py main.py"
     
     CALIBRATE_PROGRAM=""
-    for prog in "${POSSIBLE_PROGRAMS[@]}"; do
-        if [[ -f "$prog" ]]; then
+    for prog in $POSSIBLE_PROGRAMS; do
+        if [ -f "$prog" ]; then
             CALIBRATE_PROGRAM="$prog"
             break
         fi
     done
     
-    if [[ -z "$CALIBRATE_PROGRAM" ]]; then
+    if [ -z "$CALIBRATE_PROGRAM" ]; then
         echo -e "${RED}❌ 未找到校准程序${NC}"
         return 1
     fi
@@ -86,10 +81,10 @@ run_calibration() {
     if systemctl is-active --quiet "$SERVICE_NAME" 2>/dev/null; then
         echo -e "${YELLOW}⏸️  停止服务: $SERVICE_NAME${NC}"
         sudo systemctl stop "$SERVICE_NAME"
-        SERVICE_WAS_RUNNING=true
+        SERVICE_WAS_RUNNING="true"
     else
         echo -e "${BLUE}📝 服务未运行: $SERVICE_NAME${NC}"
-        SERVICE_WAS_RUNNING=false
+        SERVICE_WAS_RUNNING="false"
     fi
     
     # 执行校准
@@ -97,7 +92,7 @@ run_calibration() {
         echo -e "${GREEN}✅ 校准完成${NC}"
         
         # 重新启动服务（如果之前在运行）
-        if [[ "$SERVICE_WAS_RUNNING" == "true" ]]; then
+        if [ "$SERVICE_WAS_RUNNING" = "true" ]; then
             echo -e "${BLUE}🚀 重新启动服务: $SERVICE_NAME${NC}"
             sudo systemctl start "$SERVICE_NAME"
             
@@ -134,11 +129,11 @@ main() {
     echo -e "${YELLOW}❓ 检测到模块未校准，是否现在进行校准？ [y/N]${NC}"
     read -r response
     
-    if [[ "$response" =~ ^[Yy]$ ]]; then
+    if echo "$response" | grep -q "^[Yy]$"; then
         echo ""
         run_calibration
         
-        if [[ $? -eq 0 ]]; then
+        if [ $? -eq 0 ]; then
             echo ""
             echo -e "${GREEN}🎉 校准完成！模块现在可以正常使用了${NC}"
         else
