@@ -9,6 +9,18 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# 自动激活虚拟环境
+if [ -d "venv" ]; then
+    source "venv/bin/activate"
+    echo -e "${GREEN}✅ 已激活虚拟环境${NC}"
+else
+    echo -e "${YELLOW}⚠️  未找到虚拟环境${NC}"
+    echo "💡 请在模块目录下执行此脚本"
+    echo "   当前目录: $(pwd)"
+    echo "   请确保在包含 venv 目录的模块文件夹中运行"
+    exit 1
+fi
+
 # 模块名称（从目录名自动获取）
 MODULE_NAME=$(basename "$(pwd)")
 CONFIG_FILE="config.ini"
