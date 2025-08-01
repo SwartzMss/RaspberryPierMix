@@ -89,6 +89,18 @@
 
 - **时间戳**：所有消息建议携带单位秒的 UTC 时间戳。
 
+## 📋 已实现的传感器与执行器
+
+### 传感器（Publishers）
+- `temperature_humidity` - DHT22 温湿度
+- `button` - GPIO 按键
+- `pir` - PIR 红外运动
+- `volume_knob` - 音量旋钮（ADS1115）
+
+### 执行器（Subscribers）
+- `buzzer` - 蜂鸣器
+- `oled` - OLED 显示屏
+
 ---
 
 ## 🚀 示例脚本概览
@@ -143,7 +155,24 @@
   }
   ```
 
-  `motion_detected` 为 `true` 时表示检测到运动，为 `false` 时表示无运动状态。
+
+`motion_detected` 为 `true` 时表示检测到运动，为 `false` 时表示无运动状态。
+
+### sensors/volume_knob/volume_knob_pub.py
+
+```python
+# 基于 ADS1115 的旋转电位器传感器，发布音量百分比
+# 需要先执行 calibrate.sh 完成校准
+```
+
+- **消息格式**：
+
+  ```json
+  {
+    "volume": 75,
+    "timestamp": 1710000000
+  }
+  ```
 
 ### actuators/buzzer/buzzer_sub.py
 
@@ -173,5 +202,10 @@
 [`sensors/volume_knob/README.md`](sensors/volume_knob/README.md)。该文档详细
 介绍了如何运行校准脚本以及校准结果如何被服务加载。其他传感器可以按照同
 样的流程扩展校准支持。
+
+### 校准结果持久化
+- ✅ 校准后自动保存到 `config.ini`
+- ✅ 重启程序自动加载校准参数
+- ✅ 无需重复校准
 
 ---
