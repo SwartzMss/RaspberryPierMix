@@ -20,12 +20,16 @@ class ButtonPublisher(EventPublisher):
         logging.info("ButtonPublisher 初始化完成 (gpiozero)")
 
     def on_pressed(self):
-        payload = {
-            "event": "pressed",
-            "timestamp": int(time.time())
+        # 发布控制指令
+        action_message = {
+            "action": "button_pressed",
+            "params": {
+                "timestamp": int(time.time())
+            }
         }
-        self.publish_sensor_data('button', payload, retain=False)
-        logging.info("已发布按键事件到MQTT")
+        topic = f"{self.topic_prefix}/common"
+        self.publish_message(topic, action_message, retain=False)
+        logging.info("已发布按键控制指令到MQTT")
 
 def setup_logging() -> None:
     logging.basicConfig(

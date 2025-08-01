@@ -95,8 +95,10 @@ python volume_knob_pub.py
 **消息内容**:
 ```json
 {
-    "volume": 75,
-    "timestamp": 1710000000
+    "action": "set_volume",
+    "params": {
+        "volume": 75
+    }
 }
 ```
 

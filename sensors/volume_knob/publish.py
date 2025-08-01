@@ -44,8 +44,15 @@ class VolumeKnobPublisher(EventPublisher):
                     if data:
                         # 检查是否有显著变化
                         if self.sensor.has_significant_change(data['volume'], self.threshold):
-                            # 发布MQTT消息
-                            self.publish_sensor_data(self.sensor_type, data, retain=True)
+                            # 发布控制指令
+                            action_message = {
+                                "action": "set_volume",
+                                "params": {
+                                    "volume": data['volume']
+                                }
+                            }
+                            topic = f"{self.topic_prefix}/audio"
+                            self.publish_message(topic, action_message, retain=True)
                             logging.info(f"音量变化: {data['volume']}%")
                     else:
                         logging.warning("读取音量数据失败")

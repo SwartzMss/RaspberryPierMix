@@ -42,9 +42,9 @@ pip install lgpio paho-mqtt
    ```bash
    python publisher.py
    ```
-3. 按下按键时，会向MQTT发布如下事件：
-   - topic: `sensor/button`
-   - payload: `{ "event": "pressed", "timestamp": 1710000000 }`
+3. 按下按键时，会向MQTT发布如下控制指令：
+   - topic: `sensor/common`
+   - payload: `{ "action": "button_pressed", "params": { "timestamp": 1710000000 } }`
 
 ## 说明
 - 可根据需要修改GPIO编号和MQTT参数。

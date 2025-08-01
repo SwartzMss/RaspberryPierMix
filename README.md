@@ -84,6 +84,7 @@
 | 领域    | 主题前缀              | 格式示例                                 |
 | ----- | ----------------- | ------------------------------------ |
 | 传感器数据 | `sensor/{type}`   | `{"temperature": 23.5, "humidity": 40.2, "timestamp": 162}` / `{"motion_detected": true, "timestamp": 162}` |
+| 通用控制指令 | `sensor/common`   | `{"action": "button_pressed", "params": {"timestamp": 162}}` |
 | 执行器命令 | `actuator/{name}` | `{"action": true, "params": {"times": 3}}` |
 
 
@@ -133,8 +134,10 @@
 
   ```json
   {
-    "event": "pressed",
-    "timestamp": 1710000000
+    "action": "button_pressed",
+    "params": {
+      "timestamp": 1710000000
+    }
   }
   ```
 
@@ -169,8 +172,10 @@
 
   ```json
   {
-    "volume": 75,
-    "timestamp": 1710000000
+    "action": "set_volume",
+    "params": {
+      "volume": 75
+    }
   }
   ```
 
