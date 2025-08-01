@@ -337,9 +337,18 @@ install_and_start_services() {
     
     # 🔥 新增：通用校准检测机制
     local uncalibrated_modules=()
+    local services_to_start=()
     
+    # 第一步：停止所有现有服务并检查校准状态
+    log_info "停止现有服务并检查校准状态..."
     for service_file in "${service_files[@]}"; do
         service_name=$(basename "$service_file")
+        
+        # 停止现有服务（如果正在运行）
+        if systemctl is-active --quiet "$service_name" 2>/dev/null; then
+            log_info "停止服务: $service_name"
+            sudo systemctl stop "$service_name"
+        fi
         
         # 从服务名获取模块名（去掉-publisher.service或-subscriber.service后缀）
         module_name=$(echo "$service_name" | sed -E 's/-(publisher|subscriber)\.service$//')
@@ -357,22 +366,36 @@ install_and_start_services() {
                 
                 # 检查校准状态（使用shell脚本检查）
                 if cd "$sensor_dir" && ./calibrate.sh --check >/dev/null 2>&1; then
-                    log_success "$module_name 模块已校准，启动服务"
+                    log_success "$module_name 模块已校准"
+                    services_to_start+=("$service_name")
                     cd - > /dev/null
                 else
                     log_error "$module_name 模块未校准！跳过启动此服务"
                     uncalibrated_modules+=("$module_name")
                     cd - > /dev/null
-                    # 仍然enable服务，但不启动
-                    sudo systemctl enable "$service_name"
-                    continue  # 跳过启动此服务
                 fi
+            else
+                # 没有校准脚本的模块直接加入启动列表
+                services_to_start+=("$service_name")
             fi
+        else
+            # 非publisher服务直接加入启动列表
+            services_to_start+=("$service_name")
         fi
-        
-        log_info "启用并启动服务: $service_name"
+    done
+    
+    # 第二步：启用所有服务
+    log_info "启用所有服务..."
+    for service_file in "${service_files[@]}"; do
+        service_name=$(basename "$service_file")
         sudo systemctl enable "$service_name"
-        sudo systemctl restart "$service_name"
+    done
+    
+    # 第三步：启动已校准的服务
+    log_info "启动已校准的服务..."
+    for service_name in "${services_to_start[@]}"; do
+        log_info "启动服务: $service_name"
+        sudo systemctl start "$service_name"
     done
     
     # 如果有未校准的模块，显示校准指南

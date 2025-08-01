@@ -50,9 +50,10 @@ check_calibration() {
         return 1
     fi
     
-    # 检查值是否有效（非负数且min < max）
-    if [ "$(echo "$min_voltage < 0" | bc -l)" = "1" ] || [ "$(echo "$max_voltage < 0" | bc -l)" = "1" ]; then
-        echo -e "${RED}❌ 检测到负值，需要重新校准${NC}"
+    # 检查值是否有效（允许小的负值，但min < max）
+    # 允许小的负电压值（通常是由于ADC偏移或噪声造成的）
+    if [ "$(echo "$min_voltage < -1.0" | bc -l)" = "1" ] || [ "$(echo "$max_voltage < -1.0" | bc -l)" = "1" ]; then
+        echo -e "${RED}❌ 检测到负值过大，需要重新校准${NC}"
         return 1
     fi
     
