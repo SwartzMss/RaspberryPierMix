@@ -174,25 +174,6 @@
   }
   ```
 
-### 示例：系统音量控制脚本
-
-```python
-import os
-import json
-import paho.mqtt.client as mqtt
-
-def on_message(client, userdata, msg):
-    if msg.topic == "sensor/volume_knob":
-        data = json.loads(msg.payload.decode())
-        os.system(f"amixer set Master {data['volume']}%")
-
-client = mqtt.Client()
-client.on_message = on_message
-client.connect("localhost", 1883, 60)
-client.subscribe("sensor/volume_knob")
-client.loop_forever()
-```
-
 ### actuators/buzzer/buzzer_sub.py
 
 ```python
