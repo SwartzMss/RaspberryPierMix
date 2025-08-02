@@ -48,14 +48,8 @@ class DHT22Publisher(PeriodicPublisher):
         data = self.sensor.read()
 
         if data:
-            # 构建标准化的温湿度数据
-            temp_humidity_data = {
-                "temperature": data['temperature'],
-                "humidity": data['humidity']
-            }
-            
-            # 发布传感器数据
-            self.publish_sensor_data(temp_humidity_data, retain=True)
+            # 直接使用传感器数据
+            self.publish_sensor_data(data, retain=True)
             logger.info(f"已发布温湿度数据: 温度={data['temperature']}°C, 湿度={data['humidity']}%")        
         else:
             logger.warning("跳过本次发布，传感器数据读取失败")

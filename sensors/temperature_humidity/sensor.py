@@ -39,8 +39,7 @@ class DHT22Sensor:
                 if temperature is not None and humidity is not None:
                     data = {
                         'temperature': round(temperature, 2),
-                        'humidity': round(humidity, 2),
-                        'timestamp': int(time.time())  # UTC seconds since Unix Epoch
+                        'humidity': round(humidity, 2)
                     }
                     logger.debug(f"传感器数据读取成功: {data}")
                     return data

@@ -44,7 +44,6 @@ temperature_humidity/
 [mqtt]
 broker = localhost
 port = 1883
-# MQTT主题前缀，发布的消息主题格式为: {topic_prefix}/{sensor_type}
 topic_prefix = sensor
 # 数据发布间隔（秒）
 publish_interval = 30
