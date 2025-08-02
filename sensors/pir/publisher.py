@@ -37,16 +37,11 @@ class PIRPublisher(EventPublisher):
         logger.info("PIR发布者初始化完成（稳定期已完成）")
 
     def _on_motion_detected(self, motion_data: Dict[str, Any]):
-        """人体检测回调函数 - 统一数据格式"""
+        """人体检测回调函数 - 直接使用传感器数据"""
         try:
-            # 构建标准化的PIR数据
-            pir_data = {
-                "motion": "detected"
-            }
-            
-            # 发布传感器数据
-            self.publish_sensor_data(pir_data, retain=True)
-            logger.info(f"检测到人体，已发布: {pir_data}")
+            # 直接使用传感器传递的数据
+            self.publish_sensor_data(motion_data, retain=True)
+            logger.info(f"检测到人体，已发布: {motion_data}")
             
         except Exception as e:
             logger.error(f"处理PIR检测事件时发生错误: {e}")
