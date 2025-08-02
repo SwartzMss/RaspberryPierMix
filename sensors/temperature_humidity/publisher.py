@@ -39,7 +39,6 @@ class DHT22Publisher(PeriodicPublisher):
         }
 
         self.sensor = DHT22Sensor(sensor_config)
-        self.sensor_type = config.get('sensor_type', 'temperature_humidity')
         
         logger.info("DHT22发布者初始化完成")
 

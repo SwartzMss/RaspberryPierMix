@@ -33,7 +33,6 @@ class PIRPublisher(EventPublisher):
         }
 
         self.sensor = PIRSensor(sensor_config)
-        self.sensor_type = config.get('sensor_type', 'pir_motion')
 
         logger.info("PIR发布者初始化完成（稳定期已完成）")
 

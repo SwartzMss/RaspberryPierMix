@@ -24,7 +24,6 @@ class VolumeKnobPublisher(EventPublisher):
         # 配置参数
         self.threshold = config.get('volume_threshold', 2)
         self.read_interval = config.get('read_interval', 0.1)
-        self.sensor_type = config.get('sensor_type', 'volume_knob')
 
         # 监控控制
         self.monitoring = True

@@ -22,7 +22,6 @@ class ButtonPublisher(EventPublisher):
         # Button配置
         self.button_pin = config.get('button_pin', 17)
         self.bounce_time = config.get('bounce_time', 0.05)
-        self.sensor_type = config.get('sensor_type', 'button')
         
         # 初始化Button
         self.button = Button(self.button_pin, bounce_time=self.bounce_time)
