@@ -165,6 +165,14 @@ class MQTTBase:
         self.running = False
         self.disconnect()
         logging.info("MQTT客户端已停止")
+    
+    def init_sensor(self):
+        """初始化传感器 - 子类可重写"""
+        logging.info(f"传感器 {self.sensor_type} 初始化")
+    
+    def cleanup_sensor(self):
+        """清理传感器 - 子类可重写"""
+        logging.info(f"传感器 {self.sensor_type} 清理")
 
 class MQTTSubscriber(MQTTBase):
     """MQTT订阅者基类"""
@@ -237,14 +245,6 @@ class EventPublisher(MQTTBase):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
     
-    def init_sensor(self):
-        """初始化传感器 - 子类可重写"""
-        logging.info(f"事件传感器 {self.sensor_type} 初始化")
-    
-    def cleanup_sensor(self):
-        """清理传感器 - 子类可重写"""
-        logging.info(f"事件传感器 {self.sensor_type} 清理")
-    
     def start(self):
         """启动事件驱动型发布者"""
         if not self.connect():
@@ -275,14 +275,6 @@ class PeriodicPublisher(MQTTBase):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self.publish_interval = config.get('publish_interval', 30)
-    
-    def init_sensor(self):
-        """初始化传感器 - 子类可重写"""
-        logging.info(f"周期性传感器 {self.sensor_type} 初始化")
-    
-    def cleanup_sensor(self):
-        """清理传感器 - 子类可重写"""
-        logging.info(f"周期性传感器 {self.sensor_type} 清理")
     
     def start(self):
         """启动周期性发布者"""
