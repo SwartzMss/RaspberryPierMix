@@ -51,8 +51,7 @@ class DHT22Publisher(PeriodicPublisher):
             # 构建标准化的温湿度数据
             temp_humidity_data = {
                 "temperature": data['temperature'],
-                "humidity": data['humidity'],
-                "timestamp": data.get('timestamp', int(time.time()))
+                "humidity": data['humidity']
             }
             
             # 发布传感器数据

@@ -37,8 +37,7 @@ class ButtonPublisher(EventPublisher):
         try:
             # 构建标准化的按钮数据
             button_data = {
-                "action": "pressed",
-                "timestamp": int(time.time())
+                "action": "pressed"
             }
             
             # 发布传感器数据
@@ -52,8 +51,7 @@ class ButtonPublisher(EventPublisher):
         try:
             # 构建标准化的按钮数据
             button_data = {
-                "action": "released", 
-                "timestamp": int(time.time())
+                "action": "released"
             }
             
             # 发布传感器数据

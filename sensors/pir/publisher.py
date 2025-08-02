@@ -41,8 +41,7 @@ class PIRPublisher(EventPublisher):
         try:
             # 构建标准化的PIR数据
             pir_data = {
-                "motion": "detected",
-                "timestamp": int(time.time())
+                "motion": "detected"
             }
             
             # 发布传感器数据

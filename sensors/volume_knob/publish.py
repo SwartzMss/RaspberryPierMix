@@ -46,8 +46,7 @@ class VolumeKnobPublisher(EventPublisher):
                         if self.sensor.has_significant_change(data['volume'], self.threshold):
                             # 构建标准化的音量数据
                             volume_data = {
-                                "volume": data['volume'],
-                                "timestamp": data['timestamp']
+                                "volume": data['volume']
                             }
                             
                             # 发布传感器数据
