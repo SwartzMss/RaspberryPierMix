@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-音量旋钮传感器模块（基于ADS1115和电位器）
+电位器传感器模块（基于ADS1115和电位器）
 参考: https://github.com/SwartzMss/pi5-potentiometer-tools
 支持校准结果的持久化保存
 """
@@ -70,12 +70,12 @@ except ImportError as e:
 
 logger = logging.getLogger(__name__)
 
-class VolumeKnobSensor:
-    """音量旋钮传感器类（基于ADS1115）"""
+class PotentiometerSensor:
+    """电位器传感器类（基于ADS1115）"""
     
     def __init__(self, config: Dict[str, Any], config_manager=None):
         """
-        初始化音量旋钮传感器
+        初始化电位器传感器
         
         Args:
             config: 传感器配置字典
@@ -88,29 +88,29 @@ class VolumeKnobSensor:
         self.channel = config.get('channel', 2)  # A2通道
         self.min_voltage = config.get('min_voltage', -1.0)
         self.max_voltage = config.get('max_voltage', -1.0)
-        self.min_volume = config.get('min_volume', 0)
-        self.max_volume = config.get('max_volume', 100)
+        self.min_value = config.get('min_value', 0)
+        self.max_value = config.get('max_value', 100)
         self.stabilize_samples = config.get('stabilize_samples', 5)
         
         # 历史值缓存用于稳定性处理
         self.voltage_history = deque(maxlen=self.stabilize_samples)
-        self.last_volume = None
+        self.last_value = None
         
         # 🔥 关键：检查校准状态，拒绝无效值
         # 在校准模式下跳过校准验证
         skip_calibration_check = config.get('skip_calibration_check', False)
         
         if not skip_calibration_check and not self._validate_calibration():
-            logger.error("❌ 音量旋钮未校准或校准值无效！")
+            logger.error("❌ 电位器未校准或校准值无效！")
             logger.error("📋 请先进行校准：")
-            logger.error("   python volume_knob_pub.py --calibrate")
+            logger.error("   python potentiometer_pub.py --calibrate")
             logger.error("💡 或者参考文档： cat README.md")
-            raise ValueError("音量旋钮未校准，无法启动服务")
+            raise ValueError("电位器未校准，无法启动服务")
         
         # 初始化ADS1115
         self._init_ads1115(config)
         
-        logger.info(f"✅ 音量旋钮传感器初始化完成: 通道A{self.channel}")
+        logger.info(f"✅ 电位器传感器初始化完成: 通道A{self.channel}")
         
         if not skip_calibration_check:
             logger.info(f"✅ 校准电压范围: {self.min_voltage:.3f}V - {self.max_voltage:.3f}V (范围: {self.max_voltage - self.min_voltage:.3f}V)")
@@ -185,36 +185,36 @@ class VolumeKnobSensor:
         
         return sum(stable_values) / len(stable_values)
     
-    def voltage_to_volume(self, voltage: float) -> int:
+    def voltage_to_value(self, voltage: float) -> int:
         """
-        将电压值转换为音量百分比
+        将电压值转换为电位器值百分比
         
         Args:
             voltage: 电压值
             
         Returns:
-            音量百分比 (0-100)
+            电位器值百分比 (0-100)
         """
         # 限制电压范围
         voltage = max(self.min_voltage, min(self.max_voltage, voltage))
         
-        # 线性映射到音量范围
+        # 线性映射到电位器值范围
         voltage_range = self.max_voltage - self.min_voltage
-        volume_range = self.max_volume - self.min_volume
+        value_range = self.max_value - self.min_value
         
         if voltage_range == 0:
-            return self.min_volume
+            return self.min_value
             
-        volume = self.min_volume + (voltage - self.min_voltage) * volume_range / voltage_range
+        value = self.min_value + (voltage - self.min_voltage) * value_range / voltage_range
         
-        return max(self.min_volume, min(self.max_volume, round(volume)))
+        return max(self.min_value, min(self.max_value, round(value)))
     
-    def read_volume(self) -> Optional[Dict[str, Any]]:
+    def read_potentiometer(self) -> Optional[Dict[str, Any]]:
         """
-        读取音量数据
+        读取电位器数据
         
         Returns:
-            音量数据字典，包含音量百分比、电压等信息
+            电位器数据字典，包含电位器值百分比、电压等信息
         """
         raw_data = self.read_raw_data()
         if not raw_data:
@@ -223,31 +223,31 @@ class VolumeKnobSensor:
         # 稳定化处理
         stable_voltage = self._stabilize_reading(raw_data['voltage'])
         
-        # 转换为音量百分比
-        volume = self.voltage_to_volume(stable_voltage)
+        # 转换为电位器值百分比
+        value = self.voltage_to_value(stable_voltage)
         
         return {
-            'volume': volume,
+            'value': value,
             'timestamp': raw_data['timestamp']
         }
     
-    def has_significant_change(self, current_volume: int, threshold: int = 2) -> bool:
+    def has_significant_change(self, current_value: int, threshold: int = 2) -> bool:
         """
-        检查音量是否有显著变化
+        检查电位器值是否有显著变化
         
         Args:
-            current_volume: 当前音量
+            current_value: 当前电位器值
             threshold: 变化阈值
             
         Returns:
             是否有显著变化
         """
-        if self.last_volume is None:
-            self.last_volume = current_volume
+        if self.last_value is None:
+            self.last_value = current_value
             return True
             
-        if abs(current_volume - self.last_volume) >= threshold:
-            self.last_volume = current_volume
+        if abs(current_value - self.last_value) >= threshold:
+            self.last_value = current_value
             return True
             
         return False
@@ -298,7 +298,7 @@ class VolumeKnobSensor:
         # 🔥 关键：如果有配置管理器，保存到文件
         if self.config_manager:
             try:
-                self.config_manager.update_volume_calibration(min_voltage, max_voltage)
+                self.config_manager.update_potentiometer_calibration(min_voltage, max_voltage)
                 logger.info("校准结果已保存到配置文件")
             except Exception as e:
                 logger.error(f"保存校准结果失败: {e}")
@@ -346,9 +346,9 @@ class VolumeKnobSensor:
     def get_sensor_info(self) -> Dict[str, Any]:
         """获取传感器信息"""
         return {
-            'type': 'VolumeKnob',
+            'type': 'Potentiometer',
             'channel': f'A{self.channel}',
             'voltage_range': f'{self.min_voltage}V - {self.max_voltage}V',
-            'volume_range': f'{self.min_volume}% - {self.max_volume}%',
+            'value_range': f'{self.min_value}% - {self.max_value}%',
             'i2c_address': self.config.get('i2c_address', '0x48')
         }

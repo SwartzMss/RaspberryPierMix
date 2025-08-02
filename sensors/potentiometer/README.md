@@ -1,7 +1,7 @@
-# 音量旋钮传感器
+# 电位器传感器
 
 ## 概述
-基于ADS1115和旋转电位器的音量控制传感器，通过MQTT发布音量变化事件。
+基于ADS1115和旋转电位器的通用传感器，通过MQTT发布电位器值变化事件。
 ⚠️ **必须先校准才能启动服务**，默认配置为无效值以强制用户校准。
 
 参考项目: [pi5-potentiometer-tools](https://github.com/SwartzMss/pi5-potentiometer-tools)
@@ -9,12 +9,12 @@
 ## 🔧 硬件连接
 
 ### 电位器连接（重要！）
-**标准接线（符合音量控制习惯）**：
+**标准接线**：
 - 电位器**引脚1** → **GND** （接地端）
 - 电位器**引脚2** → **ADS1115 A2** （滑动触点/信号输出）
 - 电位器**引脚3** → **5V** （高电压端）
 
-这样接线后：**顺时针 = 音量增大，逆时针 = 音量减小** ✅
+这样接线后：**顺时针 = 值增大，逆时针 = 值减小** ✅
 
 ### ADS1115连接
 - ADS1115 VDD → Pi5 3.3V
@@ -32,27 +32,27 @@ port = 1883
 topic_prefix = sensor
 ```
 
-### 音量旋钮配置
+### 电位器配置
 ```ini
-[volume_knob]
+[potentiometer]
 channel = 2              # A2通道
 gain = 2/3              # 支持6.144V满量程
 min_voltage = 0.0       # 会在校准后自动更新
 max_voltage = 5.0       # 会在校准后自动更新
-volume_threshold = 2     # 变化2%才发布
+value_threshold = 2      # 变化2%才发布
 ```
 
 ## 🚀 使用方法
 
 ### 1. 安装依赖
 ```bash
-cd sensors/volume_knob
+cd sensors/potentiometer
 pip install -r requirements.txt
 ```
 
 ### 2. 校准传感器（必须！）
 ```bash
-python volume_knob_pub.py --calibrate
+python potentiometer_pub.py --calibrate
 ```
 ⚠️ **注意：没有校准无法启动服务！**
 
@@ -66,7 +66,7 @@ python volume_knob_pub.py --calibrate
 模块目录提供了统一命名的校准脚本：
 ```bash
 # 在模块目录内执行
-cd sensors/volume_knob
+cd sensors/potentiometer
 ./calibrate.sh
 ```
 🎆 **统一架构**：所有需要校准的传感器模块都使用相同的 `calibrate.sh` 命名规范
@@ -79,26 +79,27 @@ cd sensors/volume_knob
 
 ### 3. 测试读数
 ```bash
-python volume_knob_pub.py --test
+python potentiometer_pub.py --test
 ```
-转动电位器观察实时数值和音量条显示。
+转动电位器观察实时数值和电位器值条显示。
 
 ### 4. 正常运行
 ```bash
-python volume_knob_pub.py
+python potentiometer_pub.py
 ```
 
 ## 📡 MQTT消息格式
 
-**主题**: `sensor/volume_knob`
+**主题**: `sensor/potentiometer`
 
 **消息内容**:
 ```json
 {
-    "action": "set_volume",
+    "type": "potentiometer",
     "params": {
-        "volume": 75
-    }
+        "value": 75
+    },
+    "timestamp": 1703123456
 }
 ```
 
@@ -110,7 +111,7 @@ python volume_knob_pub.py
 - ✅ 无需重复校准
 
 ### 📊 智能发布
-- ✅ 事件驱动（只在音量变化时发布）
+- ✅ 事件驱动（只在电位器值变化时发布）
 - ✅ 可配置变化阈值（默认2%）
 - ✅ 电压稳定化处理（减少抖动）
 
@@ -122,9 +123,9 @@ python volume_knob_pub.py
 ## 🔄 校准流程详解
 
 ```bash
-$ python volume_knob_pub.py --calibrate
+$ python potentiometer_pub.py --calibrate
 
-🎛️  音量旋钮校准程序
+🎛️  电位器校准程序
 ========================================
 
 📍 请将电位器旋转到最小位置（逆时针到底），等待3秒...
@@ -167,28 +168,27 @@ max_voltage = -1.0
 min_voltage = 0.035
 max_voltage = 4.982
 ```
-结果：✅ **服务正常启动**，音量范围精确映射到电位器实际输出范围
+结果：✅ **服务正常启动**，电位器值范围精确映射到电位器实际输出范围
 
 ## 🎵 系统集成示例
 
-### 音量控制脚本
+### 电位器控制脚本
 ```python
 import os
 import json
 import paho.mqtt.client as mqtt
 
 def on_message(client, userdata, msg):
-    if msg.topic == "sensor/volume_knob":
+    if msg.topic == "sensor/potentiometer":
         data = json.loads(msg.payload.decode())
-        volume = data['volume']
-        # 控制系统音量
-        os.system(f"amixer set Master {volume}%")
-        print(f"系统音量已设置为: {volume}%")
+        value = data['params']['value']
+        # 控制任意系统参数
+        print(f"电位器值变化: {value}%")
 
 client = mqtt.Client()
 client.on_message = on_message
 client.connect("localhost", 1883, 60)
-client.subscribe("sensor/volume_knob")
+client.subscribe("sensor/potentiometer")
 client.loop_forever()
 ```
 
@@ -198,27 +198,27 @@ client.loop_forever()
 检查是否校准：
 ```bash
 # 检查校准状态
-cd sensors/volume_knob
+cd sensors/potentiometer
 python check_calibration.py
 
 # 如果未校准，进行校准
-python volume_knob_pub.py --calibrate
+python potentiometer_pub.py --calibrate
 ```
 
 ### install脚本提示未校准？
 这是正常的！系统设计为强制校准：
 ```bash
 # 使用统一校准脚本（推荐）
-cd sensors/volume_knob
+cd sensors/potentiometer
 ./calibrate.sh
 
 # 或手动校准
-python volume_knob_pub.py --calibrate
-sudo systemctl start volume_knob-publisher
+python potentiometer_pub.py --calibrate
+sudo systemctl start potentiometer-publisher
 ```
 
 ### 🏗️ 统一架构说明
-该音量旋钮模块采用了项目的统一校准架构：
+该电位器模块采用了项目的统一校准架构：
 - **统一文件名**：`calibrate.sh`（所有需要校准的模块）
 - **统一检测**：`check_calibration.py`（install脚本自动检测）
 - **统一流程**：未校准拒绝启动服务，并显示校准指南
@@ -234,10 +234,10 @@ sudo systemctl start volume_knob-publisher
 chmod 664 config.ini
 ```
 
-### 音量变化不灵敏？
-调整 `volume_threshold` 值：
+### 电位器值变化不灵敏？
+调整 `value_threshold` 值：
 ```ini
-volume_threshold = 1  # 更灵敏
+value_threshold = 1  # 更灵敏
 ```
 
 ### 硬件连接问题？
@@ -248,7 +248,7 @@ sudo i2cdetect -y 1
 # 应该看到ADS1115在地址 0x48
 
 # 测试模式检查读数
-python volume_knob_pub.py --test
+python potentiometer_pub.py --test
 ```
 
 ## 📝 技术细节

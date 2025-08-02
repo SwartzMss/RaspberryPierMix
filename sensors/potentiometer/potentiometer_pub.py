@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-音量旋钮传感器主程序 - MQTT发布者
-支持校准和实时音量监控
+电位器传感器主程序 - MQTT发布者
+支持校准和实时电位器监控
 """
 
 import sys
@@ -14,7 +14,7 @@ import signal
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 
 from config import ConfigManager
-from publish import VolumeKnobPublisher
+from publish import PotentiometerPublisher
 
 def setup_logging(level=logging.INFO):
     """设置日志配置"""
@@ -23,7 +23,7 @@ def setup_logging(level=logging.INFO):
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         handlers=[
             logging.StreamHandler(),
-            logging.FileHandler('volume_knob.log', encoding='utf-8')
+            logging.FileHandler('potentiometer.log', encoding='utf-8')
         ]
     )
 
@@ -35,15 +35,15 @@ def signal_handler(signum, frame):
 def main():
     """主函数"""
     parser = argparse.ArgumentParser(
-        description='音量旋钮传感器 MQTT 发布者',
+        description='电位器传感器 MQTT 发布者',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 使用示例:
-  python volume_knob_pub.py                    # 启动MQTT发布者
-  python volume_knob_pub.py --calibrate        # 校准电位器
-  python volume_knob_pub.py --status           # 显示当前状态
-  python volume_knob_pub.py --test             # 测试模式
-  python volume_knob_pub.py --config config.ini # 使用指定配置文件
+  python potentiometer_pub.py                   # 启动MQTT发布者
+  python potentiometer_pub.py --calibrate       # 校准电位器
+  python potentiometer_pub.py --status          # 显示当前状态
+  python potentiometer_pub.py --test            # 测试模式
+  python potentiometer_pub.py --config config.ini # 使用指定配置文件
         """
     )
     
@@ -81,7 +81,7 @@ def main():
             # 临时修改配置，跳过校准验证
             config['skip_calibration_check'] = True
             
-        publisher = VolumeKnobPublisher(config, config_manager)
+        publisher = PotentiometerPublisher(config, config_manager)
         
         if args.calibrate:
             # 校准模式
@@ -115,7 +115,7 @@ def main():
             
             status = publisher.get_current_status()
             if status:
-                print(f"音量: {status['volume']}%")
+                print(f"电位器值: {status['value']}%")
                 print(f"传感器信息: {status['sensor_info']}")
                 print(f"时间戳: {status['timestamp']}")
             else:
@@ -123,7 +123,7 @@ def main():
                 
         elif args.test:
             # 测试模式
-            print("🧪 测试模式 - 实时显示音量读数")
+            print("🧪 测试模式 - 实时显示电位器读数")
             print("转动电位器观察数值，按Ctrl+C退出")
             print("-" * 50)
             
@@ -131,12 +131,12 @@ def main():
                 while True:
                     status = publisher.get_current_status()
                     if status:
-                        volume = status['volume']
-                        # 显示音量条
+                        value = status['value']
+                        # 显示电位器值条
                         bar_length = 30
-                        filled = int(bar_length * volume / 100)
+                        filled = int(bar_length * value / 100)
                         bar = '█' * filled + '░' * (bar_length - filled)
-                        print(f"\r🔊 {volume:3d}% [{bar}]", end='', flush=True)
+                        print(f"\r🎛️  {value:3d}% [{bar}]", end='', flush=True)
                     else:
                         print("\r❌ 读取失败", end='', flush=True)
                     
@@ -148,11 +148,11 @@ def main():
                 
         else:
             # 正常MQTT发布模式
-            print("🚀 启动音量旋钮 MQTT 发布者...")
+            print("🚀 启动电位器 MQTT 发布者...")
             print(f"配置文件: {args.config}")
-            print(f"MQTT主题: {config.get('mqtt_topic', 'sensors/volume_knob')}")
+            print(f"MQTT主题: {config.get('mqtt_topic', 'sensors/potentiometer')}")
             print(f"发布间隔: {config.get('read_interval', 0.1)}秒")
-            print(f"变化阈值: {config.get('volume_threshold', 2)}%")
+            print(f"变化阈值: {config.get('value_threshold', 2)}%")
             print("-" * 50)
             
             if args.daemon:

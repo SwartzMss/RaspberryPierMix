@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-音量旋钮配置管理模块
+电位器配置管理模块
 支持校准结果的持久化保存
 """
 
@@ -45,25 +45,25 @@ class ConfigManager:
             'topic_prefix': self.config.get('mqtt', 'topic_prefix')
         }
     
-    def get_volume_knob_config(self) -> Dict[str, Any]:
-        """获取音量旋钮配置"""
+    def get_potentiometer_config(self) -> Dict[str, Any]:
+        """获取电位器配置"""
         return {
-            'i2c_address': self.config.get('volume_knob', 'i2c_address'),
-            'channel': self.config.getint('volume_knob', 'channel'),
-            'gain': eval(self.config.get('volume_knob', 'gain')),  # 处理2/3这样的分数
-            'min_voltage': self.config.getfloat('volume_knob', 'min_voltage'),
-            'max_voltage': self.config.getfloat('volume_knob', 'max_voltage'),
-            'min_volume': self.config.getint('volume_knob', 'min_volume'),
-            'max_volume': self.config.getint('volume_knob', 'max_volume'),
-            'volume_threshold': self.config.getint('volume_knob', 'volume_threshold'),
-            'sensor_type': self.config.get('volume_knob', 'sensor_type'),
-            'read_interval': self.config.getfloat('volume_knob', 'read_interval'),
-            'stabilize_samples': self.config.getint('volume_knob', 'stabilize_samples')
+            'i2c_address': self.config.get('potentiometer', 'i2c_address'),
+            'channel': self.config.getint('potentiometer', 'channel'),
+            'gain': eval(self.config.get('potentiometer', 'gain')),  # 处理2/3这样的分数
+            'min_voltage': self.config.getfloat('potentiometer', 'min_voltage'),
+            'max_voltage': self.config.getfloat('potentiometer', 'max_voltage'),
+            'min_value': self.config.getint('potentiometer', 'min_value'),
+            'max_value': self.config.getint('potentiometer', 'max_value'),
+            'value_threshold': self.config.getint('potentiometer', 'value_threshold'),
+            'sensor_type': self.config.get('potentiometer', 'sensor_type'),
+            'read_interval': self.config.getfloat('potentiometer', 'read_interval'),
+            'stabilize_samples': self.config.getint('potentiometer', 'stabilize_samples')
         }
     
-    def update_volume_calibration(self, min_voltage: float, max_voltage: float) -> None:
+    def update_potentiometer_calibration(self, min_voltage: float, max_voltage: float) -> None:
         """
-        更新音量校准结果并保存到配置文件
+        更新电位器校准结果并保存到配置文件
         
         Args:
             min_voltage: 校准得到的最小电压
@@ -88,8 +88,8 @@ class ConfigManager:
             raise ValueError(f"无效的校准值（电压范围过大）: {voltage_range:.3f}V")
         
         # 更新配置对象中的值
-        self.config.set('volume_knob', 'min_voltage', str(round(min_voltage, 3)))
-        self.config.set('volume_knob', 'max_voltage', str(round(max_voltage, 3)))
+        self.config.set('potentiometer', 'min_voltage', str(round(min_voltage, 3)))
+        self.config.set('potentiometer', 'max_voltage', str(round(max_voltage, 3)))
         
         # 保存到文件
         self.save_config()
@@ -99,12 +99,12 @@ class ConfigManager:
         print(f"  max_voltage: {max_voltage:.3f}V")
         print(f"  电压范围: {voltage_range:.3f}V")
         print("\n✅ 校准完成！现在可以启动服务了：")
-        print("   sudo systemctl start volume_knob-publisher")
-        print("   sudo systemctl status volume_knob-publisher")
+        print("   sudo systemctl start potentiometer-publisher")
+        print("   sudo systemctl status potentiometer-publisher")
     
     def get_all_config(self) -> Dict[str, Any]:
         """获取所有配置"""
         config = {}
         config.update(self.get_mqtt_config())
-        config.update(self.get_volume_knob_config())
+        config.update(self.get_potentiometer_config())
         return config
