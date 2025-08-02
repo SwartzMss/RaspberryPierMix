@@ -237,22 +237,22 @@ class EventPublisher(MQTTBase):
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
     
-    def start_sensor(self):
-        """启动传感器 - 子类可重写"""
-        logging.info(f"事件传感器 {self.sensor_type} 启动")
+    def init_sensor(self):
+        """初始化传感器 - 子类可重写"""
+        logging.info(f"事件传感器 {self.sensor_type} 初始化")
     
-    def stop_sensor(self):
-        """停止传感器 - 子类可重写"""
-        logging.info(f"事件传感器 {self.sensor_type} 停止")
+    def cleanup_sensor(self):
+        """清理传感器 - 子类可重写"""
+        logging.info(f"事件传感器 {self.sensor_type} 清理")
     
-    def run(self):
-        """运行事件驱动型发布者"""
+    def start(self):
+        """启动事件驱动型发布者"""
         if not self.connect():
             logging.error("无法连接到MQTT代理，退出")
-            return
+            return False
         
         self.running = True
-        self.start_sensor()
+        self.init_sensor()
         
         logging.info(f"事件传感器 {self.sensor_type} 已启动")
         
@@ -265,8 +265,10 @@ class EventPublisher(MQTTBase):
         except Exception as e:
             logging.error(f"运行过程中发生错误: {e}")
         finally:
-            self.stop_sensor()
+            self.cleanup_sensor()
             self.stop()
+        
+        return True
 
 class PeriodicPublisher(MQTTBase):
     """周期性发布者基类"""
@@ -274,22 +276,22 @@ class PeriodicPublisher(MQTTBase):
         super().__init__(config)
         self.publish_interval = config.get('publish_interval', 30)
     
-    def start_sensor(self):
-        """启动传感器 - 子类可重写"""
-        logging.info(f"周期性传感器 {self.sensor_type} 启动")
+    def init_sensor(self):
+        """初始化传感器 - 子类可重写"""
+        logging.info(f"周期性传感器 {self.sensor_type} 初始化")
     
-    def stop_sensor(self):
-        """停止传感器 - 子类可重写"""
-        logging.info(f"周期性传感器 {self.sensor_type} 停止")
+    def cleanup_sensor(self):
+        """清理传感器 - 子类可重写"""
+        logging.info(f"周期性传感器 {self.sensor_type} 清理")
     
-    def run(self):
-        """运行周期性发布者"""
+    def start(self):
+        """启动周期性发布者"""
         if not self.connect():
             logging.error("无法连接到MQTT代理，退出")
-            return
+            return False
         
         self.running = True
-        self.start_sensor()
+        self.init_sensor()
         
         logging.info(f"周期性传感器 {self.sensor_type} 已启动，发布间隔: {self.publish_interval}秒")
         
@@ -303,8 +305,10 @@ class PeriodicPublisher(MQTTBase):
         except Exception as e:
             logging.error(f"运行过程中发生错误: {e}")
         finally:
-            self.stop_sensor()
+            self.cleanup_sensor()
             self.stop()
+        
+        return True
     
     def publish_cycle(self):
         """发布周期数据 - 子类必须重写"""

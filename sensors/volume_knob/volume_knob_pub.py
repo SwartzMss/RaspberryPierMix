@@ -160,7 +160,7 @@ def main():
                 # 这里可以添加后台运行的逻辑
                 
             # 启动发布者
-            publisher.run()
+            publisher.start()
             
     except KeyboardInterrupt:
         logging.info("收到中断信号，正在退出...")

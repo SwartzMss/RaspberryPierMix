@@ -62,17 +62,17 @@ class DHT22Publisher(PeriodicPublisher):
         else:
             logger.warning("跳过本次发布，传感器数据读取失败")
 
-    def start_sensor(self):
-        """启动传感器 - 重写父类方法"""
-        logger.info("DHT22传感器已启动")
+    def init_sensor(self):
+        """初始化传感器 - 重写父类方法"""
+        logger.info("DHT22传感器已初始化")
 
-    def stop_sensor(self):
-        """停止传感器 - 重写父类方法"""
-        logger.info("DHT22传感器已停止")
+    def cleanup_sensor(self):
+        """清理传感器 - 重写父类方法"""
+        logger.info("DHT22传感器已清理")
 
-    def run(self):
-        """运行发布者 - 使用父类的标准实现"""
-        super().run()
+    def start(self):
+        """启动发布者 - 使用父类的标准实现"""
+        super().start()
 
     def get_status(self) -> Dict[str, Any]:
         """获取发布者状态"""

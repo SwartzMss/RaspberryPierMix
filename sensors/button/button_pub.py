@@ -19,7 +19,7 @@ def main():
         logger = logging.getLogger(__name__)
         logger.info("启动Button按键事件传感器发布者...")
         publisher = ButtonPublisher(config)
-        publisher.run()
+        publisher.start()
     except FileNotFoundError as e:
         print(f"配置文件错误: {e}")
         sys.exit(1)

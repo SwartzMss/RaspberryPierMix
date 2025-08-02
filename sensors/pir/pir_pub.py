@@ -36,7 +36,7 @@ def main():
         publisher = PIRPublisher(config)
         
         # 运行发布者
-        publisher.run()
+        publisher.start()
         
     except FileNotFoundError as e:
         print(f"配置文件错误: {e}")

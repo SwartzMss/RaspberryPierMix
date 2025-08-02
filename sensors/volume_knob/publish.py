@@ -82,18 +82,18 @@ class VolumeKnobPublisher(EventPublisher):
             }
         return None
 
-    def start_sensor(self):
-        """启动传感器 - 重写父类方法"""
+    def init_sensor(self):
+        """初始化传感器 - 重写父类方法"""
         self.start_monitoring()
 
-    def stop_sensor(self):
-        """停止传感器 - 重写父类方法"""
+    def cleanup_sensor(self):
+        """清理传感器 - 重写父类方法"""
         self.monitoring = False
         logging.info("音量旋钮监控已停止")
 
-    def run(self):
-        """运行发布者 - 使用父类的标准实现"""
-        super().run()
+    def start(self):
+        """启动发布者 - 使用父类的标准实现"""
+        super().start()
 
 def setup_logging() -> None:
     """设置日志"""

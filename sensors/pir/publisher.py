@@ -53,15 +53,15 @@ class PIRPublisher(EventPublisher):
         except Exception as e:
             logger.error(f"处理PIR检测事件时发生错误: {e}")
 
-    def start_sensor(self):
-        """启动传感器（稳定期已在初始化时完成）"""
+    def init_sensor(self):
+        """初始化传感器（稳定期已在初始化时完成）"""
         self.sensor.set_motion_callback(self._on_motion_detected)
         logger.info("PIR传感器已就绪，回调函数已设置")
 
-    def stop_sensor(self):
-        """停止传感器"""
-        logger.info("PIR传感器已停止")
+    def cleanup_sensor(self):
+        """清理传感器"""
+        logger.info("PIR传感器已清理")
 
-    def run(self):
-        """运行发布者 - 使用父类的标准实现"""
-        super().run()
+    def start(self):
+        """启动发布者 - 使用父类的标准实现"""
+        super().start()
