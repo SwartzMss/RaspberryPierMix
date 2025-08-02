@@ -33,6 +33,12 @@
    sudo ./install.sh
    ```
 
+2. **卸载服务**（停止、禁用并删除所有 systemd 服务）：
+   ```bash
+   chmod +x uninstall.sh
+   sudo ./uninstall.sh
+   ```
+
 2. **调试与管理 systemd 服务**
 
    - **查看服务状态**
@@ -59,6 +65,11 @@
      ```bash
      sudo systemctl daemon-reload
      sudo systemctl restart temperature_humidity-publisher.service
+     ```
+
+   - **完全卸载服务**
+     ```bash
+     sudo ./uninstall.sh
      ```
 
    - **常见问题排查**
@@ -318,5 +329,35 @@
 - ✅ 校准后自动保存到 `config.ini`
 - ✅ 重启程序自动加载校准参数
 - ✅ 无需重复校准
+
+---
+
+## 🗑️ 卸载功能
+
+项目提供了完整的卸载脚本 `uninstall.sh`，可以安全地清理所有已安装的服务：
+
+### 卸载功能包括：
+- 🛑 **停止所有服务** - 停止所有正在运行的systemd服务
+- 🚫 **禁用服务** - 禁用所有服务（开机不自启）
+- 🗑️ **删除服务文件** - 从系统删除所有服务文件
+- 🧹 **清理缓存** - 自动清理Python缓存文件
+- 📁 **可选清理** - 可选择删除services目录
+
+### 使用方法：
+```bash
+sudo ./uninstall.sh
+```
+
+### 安全特性：
+- ✅ **权限检查** - 要求sudo权限运行
+- ✅ **确认提示** - 显示详细操作说明并要求用户确认
+- ✅ **详细日志** - 彩色输出，清晰显示每个步骤
+- ✅ **错误处理** - 优雅处理各种异常情况
+
+### 卸载后重新安装：
+卸载完成后，如需重新安装，只需再次运行：
+```bash
+sudo ./install.sh
+```
 
 ---
