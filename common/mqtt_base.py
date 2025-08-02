@@ -30,6 +30,7 @@ class MQTTBase:
         self.broker_host = config.get('mqtt_broker', 'localhost')
         self.broker_port = config.get('mqtt_port', 1883)
         self.topic_prefix = config.get('topic_prefix', 'sensor')
+        self.sensor_type = config.get('sensor_type', 'unknown')
         
         # 设置MQTT回调
         self.client.on_connect = self.on_connect
@@ -96,16 +97,28 @@ class MQTTBase:
             logging.error(f"发布消息时发生错误: {e}")
             return False
     
-    def publish_sensor_data(self, sensor_type: str, data: Dict[str, Any], qos: int = 1, retain: bool = False):
+    def publish_sensor_data(self, data: Dict[str, Any], retain: bool = False):
         """
-        发布传感器数据
+        发布标准化的传感器数据
+        
         Args:
-            sensor_type: 传感器类型
-            data: 传感器数据
+            data: 传感器原始数据
+            retain: 是否保留消息
         """
         try:
-            topic = f"{self.topic_prefix}/{sensor_type}"
-            self.publish_message(topic, data, qos, retain)
+            # 构建标准化的传感器数据格式
+            sensor_message = {
+                "type": self.sensor_type,
+                "params": data,
+                "timestamp": int(time.time())
+            }
+            
+            # 发布到统一的sensor topic
+            topic = f"{self.topic_prefix}/sensor"
+            self.publish_message(topic, sensor_message, retain=retain)
+            
+            logging.info(f"已发布传感器数据 [{self.sensor_type}]: {data}")
+            
         except Exception as e:
             logging.error(f"发布传感器数据时发生错误: {e}")
 
@@ -220,45 +233,79 @@ class MQTTSubscriber(MQTTBase):
             self.stop() 
 
 class EventPublisher(MQTTBase):
-    """事件驱动型发布者基类，只负责连接和基础MQTT功能"""
+    """事件驱动型发布者基类"""
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
+    
+    def start_sensor(self):
+        """启动传感器 - 子类可重写"""
+        logging.info(f"事件传感器 {self.sensor_type} 启动")
+    
+    def stop_sensor(self):
+        """停止传感器 - 子类可重写"""
+        logging.info(f"事件传感器 {self.sensor_type} 停止")
+    
     def run(self):
+        """运行事件驱动型发布者"""
         if not self.connect():
             logging.error("无法连接到MQTT代理，退出")
             return
+        
         self.running = True
-        logging.info("事件驱动型发布者已启动")
+        self.start_sensor()
+        
+        logging.info(f"事件传感器 {self.sensor_type} 已启动")
+        
         try:
             while self.running:
                 time.sleep(1)
+                
         except KeyboardInterrupt:
             logging.info("收到键盘中断信号")
         except Exception as e:
             logging.error(f"运行过程中发生错误: {e}")
         finally:
+            self.stop_sensor()
             self.stop()
 
 class PeriodicPublisher(MQTTBase):
-    """周期性发布者基类，定时调用 publish_cycle"""
+    """周期性发布者基类"""
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
         self.publish_interval = config.get('publish_interval', 30)
+    
+    def start_sensor(self):
+        """启动传感器 - 子类可重写"""
+        logging.info(f"周期性传感器 {self.sensor_type} 启动")
+    
+    def stop_sensor(self):
+        """停止传感器 - 子类可重写"""
+        logging.info(f"周期性传感器 {self.sensor_type} 停止")
+    
     def run(self):
+        """运行周期性发布者"""
         if not self.connect():
             logging.error("无法连接到MQTT代理，退出")
             return
+        
         self.running = True
-        logging.info(f"周期性发布者已启动，发布间隔: {self.publish_interval}秒")
+        self.start_sensor()
+        
+        logging.info(f"周期性传感器 {self.sensor_type} 已启动，发布间隔: {self.publish_interval}秒")
+        
         try:
             while self.running:
                 self.publish_cycle()
                 time.sleep(self.publish_interval)
+                
         except KeyboardInterrupt:
             logging.info("收到键盘中断信号")
         except Exception as e:
             logging.error(f"运行过程中发生错误: {e}")
         finally:
+            self.stop_sensor()
             self.stop()
+    
     def publish_cycle(self):
+        """发布周期数据 - 子类必须重写"""
         raise NotImplementedError("子类必须重写 publish_cycle 方法") 

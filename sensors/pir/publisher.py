@@ -13,12 +13,12 @@ from typing import Dict, Any
 # 添加common目录到路径
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 
-from sensor_base import SensorBase
+from mqtt_base import EventPublisher
 from sensor import PIRSensor
 
 logger = logging.getLogger(__name__)
 
-class PIRPublisher(SensorBase):
+class PIRPublisher(EventPublisher):
     """简化版 PIR红外传感器发布者 - 统一数据格式"""
 
     def __init__(self, config: Dict[str, Any]):
@@ -58,28 +58,10 @@ class PIRPublisher(SensorBase):
         self.sensor.set_motion_callback(self._on_motion_detected)
         logger.info("PIR传感器已就绪，回调函数已设置")
 
+    def stop_sensor(self):
+        """停止传感器"""
+        logger.info("PIR传感器已停止")
+
     def run(self):
-        """运行发布者"""
-        if not self.connect():
-            logger.error("无法连接到MQTT代理，退出")
-            return
-
-        # 启动传感器
-        self.start_sensor()
-
-        self.running = True
-        logger.info("PIR人体检测发布者已启动，等待运动检测...")
-
-        try:
-            # 主循环
-            while self.running:
-                time.sleep(1)  # 保持主线程活跃
-
-        except KeyboardInterrupt:
-            logger.info("收到键盘中断信号")
-        except Exception as e:
-            logger.error(f"运行过程中发生错误: {e}")
-        finally:
-            logger.info("正在停止PIR传感器...")
-            self.sensor.cleanup()
-            self.stop()
+        """运行发布者 - 使用父类的标准实现"""
+        super().run()

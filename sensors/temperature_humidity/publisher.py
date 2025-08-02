@@ -13,12 +13,12 @@ import time
 # 添加common目录到路径
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 
-from sensor_base import SensorBase
+from mqtt_base import PeriodicPublisher
 from sensor import DHT22Sensor
 
 logger = logging.getLogger(__name__)
 
-class DHT22Publisher(SensorBase):
+class DHT22Publisher(PeriodicPublisher):
     """DHT22温湿度传感器发布者 - 统一数据格式"""
 
     def __init__(self, config: Dict[str, Any]):
@@ -40,7 +40,6 @@ class DHT22Publisher(SensorBase):
 
         self.sensor = DHT22Sensor(sensor_config)
         self.sensor_type = config.get('sensor_type', 'temperature_humidity')
-        self.publish_interval = config.get('publish_interval', 30)
         
         logger.info("DHT22发布者初始化完成")
 
@@ -63,25 +62,17 @@ class DHT22Publisher(SensorBase):
         else:
             logger.warning("跳过本次发布，传感器数据读取失败")
 
-    def run(self):
-        """运行发布者"""
-        if not self.connect():
-            logging.error("无法连接到MQTT代理，退出")
-            return
+    def start_sensor(self):
+        """启动传感器 - 重写父类方法"""
+        logger.info("DHT22传感器已启动")
 
-        self.running = True
-        logging.info(f"周期性发布者已启动，发布间隔: {self.publish_interval}秒")
-        
-        try:
-            while self.running:
-                self.publish_cycle()
-                time.sleep(self.publish_interval)
-        except KeyboardInterrupt:
-            logging.info("收到键盘中断信号")
-        except Exception as e:
-            logging.error(f"运行过程中发生错误: {e}")
-        finally:
-            self.stop()
+    def stop_sensor(self):
+        """停止传感器 - 重写父类方法"""
+        logger.info("DHT22传感器已停止")
+
+    def run(self):
+        """运行发布者 - 使用父类的标准实现"""
+        super().run()
 
     def get_status(self) -> Dict[str, Any]:
         """获取发布者状态"""

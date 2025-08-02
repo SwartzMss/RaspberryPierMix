@@ -11,9 +11,9 @@ import logging
 import time
 import threading
 from gpiozero import Button
-from sensor_base import SensorBase
+from mqtt_base import EventPublisher
 
-class ButtonPublisher(SensorBase):
+class ButtonPublisher(EventPublisher):
     """Button按键事件发布者 - 统一数据格式"""
 
     def __init__(self, config):
@@ -71,28 +71,18 @@ class ButtonPublisher(SensorBase):
         
         logging.info("Button监控已启动")
 
-    def run(self):
-        """运行发布者"""
-        if not self.connect():
-            logging.error("无法连接到MQTT代理，退出")
-            return
-
-        self.running = True
+    def start_sensor(self):
+        """启动传感器 - 重写父类方法"""
         self.start_monitoring()
 
-        logging.info("Button按键事件发布者已启动，等待按键事件...")
+    def stop_sensor(self):
+        """停止传感器 - 重写父类方法"""
+        self.monitoring = False
+        logging.info("Button监控已停止")
 
-        try:
-            while self.running:
-                time.sleep(1)
-
-        except KeyboardInterrupt:
-            logging.info("收到键盘中断信号")
-        except Exception as e:
-            logging.error(f"运行过程中发生错误: {e}")
-        finally:
-            self.monitoring = False
-            self.stop()
+    def run(self):
+        """运行发布者 - 使用父类的标准实现"""
+        super().run()
 
 def setup_logging() -> None:
     """设置日志"""

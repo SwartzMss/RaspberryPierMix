@@ -9,10 +9,10 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 import logging
 import time
 import threading
-from sensor_base import SensorBase
+from mqtt_base import EventPublisher
 from sensor import VolumeKnobSensor
 
-class VolumeKnobPublisher(SensorBase):
+class VolumeKnobPublisher(EventPublisher):
     """音量旋钮事件驱动发布者 - 统一数据格式"""
 
     def __init__(self, config, config_manager=None):
@@ -82,30 +82,18 @@ class VolumeKnobPublisher(SensorBase):
             }
         return None
 
-    def run(self):
-        """重写run方法"""
-        if not self.connect():
-            logging.error("无法连接到MQTT代理，退出")
-            return
-
-        self.running = True
+    def start_sensor(self):
+        """启动传感器 - 重写父类方法"""
         self.start_monitoring()
 
-        logging.info("音量旋钮发布者已启动，监控音量变化...")
+    def stop_sensor(self):
+        """停止传感器 - 重写父类方法"""
+        self.monitoring = False
+        logging.info("音量旋钮监控已停止")
 
-        try:
-            while self.running:
-                time.sleep(1)
-
-        except KeyboardInterrupt:
-            logging.info("收到键盘中断信号")
-        except Exception as e:
-            logging.error(f"运行过程中发生错误: {e}")
-        finally:
-            self.monitoring = False
-            if self.monitor_thread:
-                self.monitor_thread.join(timeout=2)
-            self.stop()
+    def run(self):
+        """运行发布者 - 使用父类的标准实现"""
+        super().run()
 
 def setup_logging() -> None:
     """设置日志"""
