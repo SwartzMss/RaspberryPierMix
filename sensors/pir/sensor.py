@@ -63,8 +63,7 @@ class PIRSensor:
         if self.motion_callback:
             try:
                 motion_data = {
-                    'motion_detected': True,
-                    'timestamp': int(current_time)
+                    'motion_detected': True
                 }
                 self.motion_callback(motion_data)
             except Exception as e:
