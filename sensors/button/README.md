@@ -52,7 +52,6 @@ pip install gpiozero paho-mqtt
      "type": "button",
      "params": {
        "action": "pressed",
-       "timestamp": 1710000000
      },
      "timestamp": 1710000000
    }

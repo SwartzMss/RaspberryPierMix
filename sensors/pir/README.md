@@ -2,7 +2,7 @@
 
 ## 概述
 
-这是一个简化版的PIR红外传感器MQTT发布者，基于gpiozero库实现，专注于人体检测事件的发布。适用于HC-SR501等PIR传感器，只在检测到人体时发布消息。
+这是一个简化版的PIR红外传感器MQTT发布者，基于gpiozero库实现，专注于人体检测事件的发布。适用于HC-SR501等PIR传感器，只在检测到人体时发布消息。采用统一的传感器数据格式。
 
 ## 文件结构
 
@@ -84,7 +84,7 @@ OUT         →    GPIO 23 (BCM编号，物理引脚16，可配置)
 
 1. 安装依赖：
    ```bash
-   pip install gpiozero lgpio
+   pip install gpiozero paho-mqtt
    # 或者
    pip install -r requirements.txt
    ```
@@ -99,14 +99,26 @@ OUT         →    GPIO 23 (BCM编号，物理引脚16，可配置)
 ## 消息格式
 
 ### 人体检测消息
+检测到人体时，会向MQTT发布标准化的传感器数据：
+- topic: `sensor/sensor`
+- payload: 
 ```json
 {
-    "motion_detected": true,
-    "timestamp": 1703123456
+  "type": "pir_motion",
+  "params": {
+    "motion": "detected"
+  },
+  "timestamp": 1710000000
 }
 ```
 
 **注意**：此简化版本只发布人体检测事件，不发布无人状态或系统状态消息。
+
+## 架构说明
+- 继承 `EventPublisher` 基类，实现事件驱动型传感器
+- 使用统一的传感器数据格式，便于系统集成
+- 只在检测到人体时发布消息，无定期轮询
+- 自动处理MQTT连接、数据发布和生命周期管理
 
 ## 特性
 
@@ -118,6 +130,7 @@ OUT         →    GPIO 23 (BCM编号，物理引脚16，可配置)
 - **模拟模式**：在非树莓派环境下可运行（用于开发测试）
 - **详细日志**：完整的启动、检测和错误日志记录
 - **精简配置**：只保留必要的MQTT和传感器参数
+- **统一数据格式**：使用标准化的传感器数据格式
 
 ## 注意事项
 

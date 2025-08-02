@@ -114,7 +114,7 @@ class MQTTBase:
             }
             
             # 发布到统一的sensor topic
-            topic = f"{self.topic_prefix}/sensor"
+            topic = f"{self.topic_prefix}"
             self.publish_message(topic, sensor_message, retain=retain)
             
             logging.info(f"已发布传感器数据 [{self.sensor_type}]: {data}")
