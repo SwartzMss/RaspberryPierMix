@@ -77,7 +77,11 @@ uninstall_services() {
         # 检查服务是否正在运行
         if systemctl is-active --quiet "$service_name" 2>/dev/null; then
             log_info "停止服务: $service_name"
-            sudo systemctl stop "$service_name"
+            # 优雅停止，超时5秒后强制kill
+            if ! timeout 5s sudo systemctl stop "$service_name" 2>/dev/null; then
+                log_warning "服务 $service_name 优雅停止超时，强制终止..."
+                sudo systemctl kill -s SIGKILL "$service_name" 2>/dev/null || true
+            fi
             stopped_services+=("$service_name")
         else
             log_info "服务未运行: $service_name"
