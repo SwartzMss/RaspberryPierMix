@@ -1,37 +1,101 @@
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
+
 # -*- coding: utf-8 -*-
 """
-Button 按键事件传感器 MQTT 发布者核心逻辑（gpiozero实现）
+Button 按键事件传感器 MQTT 发布者逻辑（gpiozero实现）
+改造为统一传感器数据格式
 """
 import logging
 import time
+import threading
 from gpiozero import Button
-from config import ConfigManager
-from mqtt_base import EventPublisher
+from sensor_base import SensorBase
 
-class ButtonPublisher(EventPublisher):
+class ButtonPublisher(SensorBase):
+    """Button按键事件发布者 - 统一数据格式"""
+
     def __init__(self, config):
         super().__init__(config)
-        self.button_gpio = int(config.get('button_gpio', 17))
-        self.button = Button(self.button_gpio, pull_up=True, bounce_time=0.05)
-        self.button.when_pressed = self.on_pressed
+        
+        # Button配置
+        self.button_pin = config.get('button_pin', 17)
+        self.bounce_time = config.get('bounce_time', 0.05)
+        self.sensor_type = config.get('sensor_type', 'button')
+        
+        # 初始化Button
+        self.button = Button(self.button_pin, bounce_time=self.bounce_time)
+        
+        # 监控控制
+        self.monitoring = True
+        self.monitor_thread = None
+        
         logging.info("ButtonPublisher 初始化完成 (gpiozero)")
 
-    def on_pressed(self):
-        # 发布控制指令
-        action_message = {
-            "action": "button_pressed",
-            "params": {
+    def _on_button_pressed(self):
+        """按钮按下回调"""
+        try:
+            # 构建标准化的按钮数据
+            button_data = {
+                "action": "pressed",
                 "timestamp": int(time.time())
             }
-        }
-        topic = f"{self.topic_prefix}/common"
-        self.publish_message(topic, action_message, retain=False)
-        logging.info("已发布按键控制指令到MQTT")
+            
+            # 发布传感器数据
+            self.publish_sensor_data(button_data, retain=False)
+            
+        except Exception as e:
+            logging.error(f"处理按钮按下事件时发生错误: {e}")
+
+    def _on_button_released(self):
+        """按钮释放回调"""
+        try:
+            # 构建标准化的按钮数据
+            button_data = {
+                "action": "released", 
+                "timestamp": int(time.time())
+            }
+            
+            # 发布传感器数据
+            self.publish_sensor_data(button_data, retain=False)
+            
+        except Exception as e:
+            logging.error(f"处理按钮释放事件时发生错误: {e}")
+
+    def start_monitoring(self):
+        """启动按钮监控"""
+        # 设置按钮事件回调
+        self.button.when_pressed = self._on_button_pressed
+        self.button.when_released = self._on_button_released
+        
+        logging.info("Button监控已启动")
+
+    def run(self):
+        """运行发布者"""
+        if not self.connect():
+            logging.error("无法连接到MQTT代理，退出")
+            return
+
+        self.running = True
+        self.start_monitoring()
+
+        logging.info("Button按键事件发布者已启动，等待按键事件...")
+
+        try:
+            while self.running:
+                time.sleep(1)
+
+        except KeyboardInterrupt:
+            logging.info("收到键盘中断信号")
+        except Exception as e:
+            logging.error(f"运行过程中发生错误: {e}")
+        finally:
+            self.monitoring = False
+            self.stop()
 
 def setup_logging() -> None:
+    """设置日志"""
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
