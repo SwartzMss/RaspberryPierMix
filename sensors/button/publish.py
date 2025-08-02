@@ -43,7 +43,7 @@ class ButtonPublisher(EventPublisher):
             }
             
             # 发布传感器数据
-            self.publish_sensor_data(button_data, retain=False)
+            self.publish_sensor_data(button_data, retain=True)
             
         except Exception as e:
             logging.error(f"处理按钮按下事件时发生错误: {e}")
@@ -58,7 +58,7 @@ class ButtonPublisher(EventPublisher):
             }
             
             # 发布传感器数据
-            self.publish_sensor_data(button_data, retain=False)
+            self.publish_sensor_data(button_data, retain=True)
             
         except Exception as e:
             logging.error(f"处理按钮释放事件时发生错误: {e}")

@@ -27,7 +27,8 @@ class ConfigManager:
     def get_button_config(self) -> Dict[str, Any]:
         return {
             'button_gpio': self.config.getint('button', 'button_gpio'),
-            'gpio_chip': self.config.getint('button', 'gpio_chip')
+            'gpio_chip': self.config.getint('button', 'gpio_chip'),
+            'sensor_type': self.config.get('button', 'sensor_type')
         }
 
     def get_all_config(self) -> Dict[str, Any]:
