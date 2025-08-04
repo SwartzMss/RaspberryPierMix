@@ -84,11 +84,58 @@ class OLEDSubscriber:
             if topic == self.control_topic:
                 # 处理控制消息
                 action = payload.get('action')
-                data = payload.get('data', {})
+                params = payload.get('params', {})
                 
-                self.logger.info(f"收到OLED控制消息: {action} - {data}")
+                self.logger.info(f"收到OLED控制消息: {action} - {params}")
                 
-                if action == 'show_time':
+                if action == 'switch_to_temperature':
+                    # 切换到温湿度显示模式
+                    self.show_temp_mode = True
+                    self._stop_time_display()  # 停止时间显示
+                    self.oled.start_cat_animation()  # 开始小猫眼睛闪烁动画
+                    
+                    # 如果有最新的温湿度数据，立即显示
+                    if self.latest_temperature is not None and self.latest_humidity is not None:
+                        self.oled.show_split_display(self.latest_temperature, self.latest_humidity)
+                        self.logger.info(f"切换到温湿度显示模式: {self.latest_temperature}°C, {self.latest_humidity}%")
+                    else:
+                        self.logger.info("切换到温湿度显示模式，等待数据...")
+                    
+                    # 设置定时器恢复到默认界面
+                    duration = params.get('duration', 600)  # 默认10分钟
+                    if duration > 0:
+                        timer = threading.Timer(duration, self._switch_to_default)
+                        timer.start()
+                        self.logger.info(f"设置 {duration} 秒后恢复默认界面")
+                    
+                elif action == 'switch_to_default':
+                    # 切换到默认界面（时间显示）
+                    self.show_temp_mode = False
+                    self._stop_time_display()  # 停止时间显示
+                    self.oled.stop_cat_animation()  # 停止小猫眼睛闪烁
+                    self.oled.show_time()
+                    self._start_time_display()  # 开始时间显示定时器
+                    self.logger.info("切换到默认界面（时间显示）")
+                    
+                elif action == 'display_temperature':
+                    # 显示温湿度数据
+                    temperature = params.get('temperature')
+                    humidity = params.get('humidity')
+                    
+                    if temperature is not None and humidity is not None:
+                        self.latest_temperature = temperature
+                        self.latest_humidity = humidity
+                        
+                        if self.show_temp_mode:
+                            self.oled.show_split_display(temperature, humidity)
+                            self.logger.info(f"更新温湿度显示: {temperature}°C, {humidity}%")
+                        else:
+                            self.logger.debug(f"收到温湿度数据但不在显示模式: {temperature}°C, {humidity}%")
+                    else:
+                        self.logger.warning(f"温湿度数据无效: {params}")
+                        
+                # 保留向后兼容的旧格式
+                elif action == 'show_time':
                     # 显示时间
                     self.show_temp_mode = False
                     self._stop_time_display()  # 停止时间显示
@@ -99,6 +146,7 @@ class OLEDSubscriber:
                     
                 elif action == 'show_temp_humi':
                     # 显示温湿度（分屏模式）
+                    data = payload.get('data', {})
                     temperature = data.get('temperature')
                     humidity = data.get('humidity')
                     
@@ -115,6 +163,7 @@ class OLEDSubscriber:
                         
                 elif action == 'update_temp_humi':
                     # 更新温湿度数据（当前在温湿度显示模式）
+                    data = payload.get('data', {})
                     temperature = data.get('temperature')
                     humidity = data.get('humidity')
                     
@@ -137,6 +186,19 @@ class OLEDSubscriber:
                 
         except Exception as e:
             self.logger.error(f"处理消息时出错: {e}")
+    
+    def _switch_to_default(self):
+        """切换到默认界面"""
+        self.show_default()
+    
+    def show_default(self):
+        """显示默认界面（时间显示）"""
+        self.show_temp_mode = False
+        self._stop_time_display()  # 停止时间显示
+        self.oled.stop_cat_animation()  # 停止小猫眼睛闪烁
+        self.oled.show_time()
+        self._start_time_display()  # 开始时间显示定时器
+        self.logger.info("显示默认界面（时间显示）")
 
     def run(self):
         self.logger.info("启动OLED订阅者...")
