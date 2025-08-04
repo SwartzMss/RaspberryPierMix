@@ -134,51 +134,6 @@ class OLEDSubscriber:
                     else:
                         self.logger.warning(f"温湿度数据无效: {params}")
                         
-                # 保留向后兼容的旧格式
-                elif action == 'show_time':
-                    # 显示时间
-                    self.show_temp_mode = False
-                    self._stop_time_display()  # 停止时间显示
-                    self.oled.stop_cat_animation()  # 停止小猫眼睛闪烁
-                    self.oled.show_time()
-                    self._start_time_display()  # 开始时间显示定时器
-                    self.logger.info("切换到时间显示模式")
-                    
-                elif action == 'show_temp_humi':
-                    # 显示温湿度（分屏模式）
-                    data = payload.get('data', {})
-                    temperature = data.get('temperature')
-                    humidity = data.get('humidity')
-                    
-                    if temperature is not None and humidity is not None:
-                        self.latest_temperature = temperature
-                        self.latest_humidity = humidity
-                        self.show_temp_mode = True
-                        self._stop_time_display()  # 停止时间显示
-                        self.oled.start_cat_animation()  # 开始小猫眼睛闪烁动画
-                        self.oled.show_split_display(temperature, humidity)
-                        self.logger.info(f"切换到温湿度显示模式: {temperature}°C, {humidity}%")
-                    else:
-                        self.logger.warning(f"温湿度数据无效: {data}")
-                        
-                elif action == 'update_temp_humi':
-                    # 更新温湿度数据（当前在温湿度显示模式）
-                    data = payload.get('data', {})
-                    temperature = data.get('temperature')
-                    humidity = data.get('humidity')
-                    
-                    if temperature is not None and humidity is not None:
-                        self.latest_temperature = temperature
-                        self.latest_humidity = humidity
-                        
-                        if self.show_temp_mode:
-                            self.oled.show_split_display(temperature, humidity)
-                            self.logger.info(f"更新温湿度显示: {temperature}°C, {humidity}%")
-                        else:
-                            self.logger.debug(f"收到温湿度更新但不在显示模式: {temperature}°C, {humidity}%")
-                    else:
-                        self.logger.warning(f"温湿度更新数据无效: {data}")
-                        
                 else:
                     self.logger.warning(f"未知的OLED控制动作: {action}")
             else:
