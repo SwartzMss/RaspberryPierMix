@@ -51,11 +51,6 @@ class InterfaceDisplayTask:
         self.logger.info(f"显示信息界面: {message}")
         self._show_interface('info', message, duration)
     
-    def show_error(self, message: str, duration: int = None):
-        """显示错误界面"""
-        self.logger.info(f"显示错误界面: {message}")
-        self._show_interface('error', message, duration)
-    
     def _show_interface(self, interface_type: str, message: str, duration: int = None):
         """显示指定界面"""
         try:
