@@ -2,7 +2,7 @@
 """
 OLED管理器模块
 专门处理与OLED显示相关的传感器数据，实现智能显示控制逻辑
-将温湿度显示和界面切换分离为两个独立的任务
+温湿度数据直接转发，界面切换独立处理
 """
 
 import logging
@@ -18,60 +18,27 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 
 from mqtt_base import MQTTSubscriber
 
-class TemperatureDisplayTask:
-    """温湿度显示任务 - 持续更新温湿度数据"""
+class TemperatureForwarder:
+    """温湿度数据转发器 - 直接转发温湿度数据到OLED"""
     
-    def __init__(self, oled_manager, config):
+    def __init__(self, oled_manager):
         self.oled_manager = oled_manager
         self.logger = logging.getLogger(__name__)
-        
-        # 从配置读取更新间隔
-        self.update_interval = config.getint('oled', 'temp_update_interval', fallback=30)
-        
-        # 温湿度状态
-        self.temperature = None
-        self.humidity = None
-        self.last_update_time = None
-        
-        # 启动温湿度更新线程
-        self.running = True
-        self.update_thread = threading.Thread(target=self._update_loop, daemon=True)
-        self.update_thread.start()
-        
-        self.logger.info("温湿度显示任务已启动")
+        self.logger.info("温湿度转发器已启动")
     
-    def update_temperature_humidity(self, temperature: float, humidity: float):
-        """更新温湿度数据"""
-        self.temperature = temperature
-        self.humidity = humidity
-        self.last_update_time = time.time()
-        self.logger.debug(f"更新温湿度数据: {temperature}°C, {humidity}%")
-    
-    def _update_loop(self):
-        """温湿度更新循环"""
-        while self.running:
-            try:
-                if self.temperature is not None and self.humidity is not None:
-                    # 发送温湿度显示命令
-                    self.oled_manager._send_oled_display_command({
-                        'mode': 'temperature',
-                        'temperature': self.temperature,
-                        'humidity': self.humidity,
-                        'timestamp': time.time()
-                    })
-                    self.logger.debug("发送温湿度显示更新")
-                
-                time.sleep(self.update_interval)
-            except Exception as e:
-                self.logger.error(f"温湿度更新循环出错: {e}")
-                time.sleep(5)  # 出错时等待5秒再继续
-    
-    def stop(self):
-        """停止温湿度显示任务"""
-        self.running = False
-        if self.update_thread.is_alive():
-            self.update_thread.join(timeout=5)
-        self.logger.info("温湿度显示任务已停止")
+    def forward_temperature_humidity(self, temperature: float, humidity: float):
+        """直接转发温湿度数据到OLED"""
+        try:
+            # 直接发送温湿度显示命令
+            self.oled_manager._send_oled_display_command({
+                'mode': 'temperature',
+                'temperature': temperature,
+                'humidity': humidity,
+                'timestamp': time.time()
+            })
+            self.logger.debug(f"转发温湿度数据: {temperature}°C, {humidity}%")
+        except Exception as e:
+            self.logger.error(f"转发温湿度数据失败: {e}")
 
 class InterfaceSwitchTask:
     """界面切换任务 - 处理一次性的界面切换事件"""
@@ -127,7 +94,7 @@ class InterfaceSwitchTask:
             self.logger.error(f"界面切换失败: {e}")
 
 class OLEDManager(MQTTSubscriber):
-    """OLED显示管理器 - 协调温湿度显示和界面切换任务"""
+    """OLED显示管理器 - 协调温湿度转发和界面切换任务"""
     
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
@@ -141,7 +108,7 @@ class OLEDManager(MQTTSubscriber):
         self.config = config
         
         # 创建两个独立的任务
-        self.temp_task = TemperatureDisplayTask(self, config)
+        self.temp_forwarder = TemperatureForwarder(self)
         self.interface_task = InterfaceSwitchTask(self, config)
         
         self.logger.info("OLED管理器初始化完成")
@@ -171,15 +138,15 @@ class OLEDManager(MQTTSubscriber):
             self.logger.error(f"处理消息时出错: {e}")
     
     def _handle_temperature_humidity(self, payload: Dict[str, Any]):
-        """处理温湿度传感器数据 - 交给温湿度显示任务"""
+        """处理温湿度传感器数据 - 直接转发"""
         params = payload.get('params', {})
         temperature = params.get('temperature')
         humidity = params.get('humidity')
         
         if temperature is not None and humidity is not None:
-            # 更新温湿度显示任务的数据
-            self.temp_task.update_temperature_humidity(temperature, humidity)
-            self.logger.info(f"温湿度数据已更新: {temperature}°C, {humidity}%")
+            # 直接转发温湿度数据
+            self.temp_forwarder.forward_temperature_humidity(temperature, humidity)
+            self.logger.info(f"温湿度数据已转发: {temperature}°C, {humidity}%")
     
     def _handle_pir_motion(self, payload: Dict[str, Any]):
         """处理PIR运动检测传感器数据 - 交给界面切换任务"""
@@ -212,7 +179,6 @@ class OLEDManager(MQTTSubscriber):
     def stop(self):
         """停止OLED管理器"""
         self.logger.info("正在停止OLED管理器...")
-        self.temp_task.stop()
         super().stop()
 
 def main():
