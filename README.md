@@ -116,7 +116,6 @@
     "type": "button",
     "params": {
         "action": "pressed",
-        "timestamp": 1754104570
     },
     "timestamp": 1754104570
 }
@@ -128,7 +127,6 @@
     "type": "volume_knob",
     "params": {
         "volume": 75,
-        "timestamp": 1754104570
     },
     "timestamp": 1754104570
 }
@@ -140,7 +138,6 @@
     "type": "pir_motion",
     "params": {
         "motion": "detected",
-        "timestamp": 1754104570
     },
     "timestamp": 1754104570
 }
@@ -153,7 +150,6 @@
     "params": {
         "temperature": 25.5,
         "humidity": 60.2,
-        "timestamp": 1754104570
     },
     "timestamp": 1754104570
 }
