@@ -25,48 +25,26 @@ class InterfaceDisplayTask:
             'duration': 600  # 10分钟
         })
     
-    def show_normal(self):
-        """发布正常界面事件"""
-        self.logger.info("发布正常界面事件")
-        self._publish_interface_event('switch_to_normal', {
-            'message': 'System Ready'
-        })
+    def show_default(self):
+        """发布默认界面事件"""
+        self.logger.info("发布默认界面事件")
+        self._publish_interface_event('switch_to_default')
     
-    def show_custom(self, message: str, duration: int = None):
-        """发布自定义界面事件"""
-        self.logger.info(f"发布自定义界面事件: {message}")
-        params = {'message': message}
-        if duration:
-            params['duration'] = duration
-        self._publish_interface_event('switch_to_custom', params)
     
-    def show_warning(self, message: str, duration: int = None):
-        """发布警告界面事件"""
-        self.logger.info(f"发布警告界面事件: {message}")
-        params = {'message': message}
-        if duration:
-            params['duration'] = duration
-        self._publish_interface_event('switch_to_warning', params)
-    
-    def show_info(self, message: str, duration: int = None):
-        """发布信息界面事件"""
-        self.logger.info(f"发布信息界面事件: {message}")
-        params = {'message': message}
-        if duration:
-            params['duration'] = duration
-        self._publish_interface_event('switch_to_info', params)
-    
-    def _publish_interface_event(self, action: str, params: Dict[str, Any]):
+    def _publish_interface_event(self, action: str, params: Dict[str, Any] = None):
         """发布界面事件"""
         try:
             # 构建事件消息
             event_message = {
                 "action": action,
                 "params": {
-                    **params,
                     "timestamp": time.time()
                 }
             }
+            
+            # 如果提供了参数，则添加到params中
+            if params:
+                event_message["params"].update(params)
             
             # 发送界面事件
             self.oled_manager._send_oled_display_command(event_message)
