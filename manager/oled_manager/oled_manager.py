@@ -9,89 +9,14 @@ import logging
 import json
 import sys
 import os
-import threading
-import time
 from typing import Dict, Any
 
 # 添加common目录到路径
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 
 from mqtt_base import MQTTSubscriber
-
-class TemperatureForwarder:
-    """温湿度数据转发器 - 直接转发温湿度数据到OLED"""
-    
-    def __init__(self, oled_manager):
-        self.oled_manager = oled_manager
-        self.logger = logging.getLogger(__name__)
-        self.logger.info("温湿度转发器已启动")
-    
-    def forward_temperature_humidity(self, temperature: float, humidity: float):
-        """直接转发温湿度数据到OLED"""
-        try:
-            # 直接发送温湿度显示命令
-            self.oled_manager._send_oled_display_command({
-                'mode': 'temperature',
-                'temperature': temperature,
-                'humidity': humidity,
-                'timestamp': time.time()
-            })
-            self.logger.debug(f"转发温湿度数据: {temperature}°C, {humidity}%")
-        except Exception as e:
-            self.logger.error(f"转发温湿度数据失败: {e}")
-
-class InterfaceSwitchTask:
-    """界面切换任务 - 处理一次性的界面切换事件"""
-    
-    def __init__(self, oled_manager, config):
-        self.oled_manager = oled_manager
-        self.logger = logging.getLogger(__name__)
-        
-        # 从配置读取切换持续时间
-        self.switch_duration = config.getint('oled', 'switch_duration', fallback=5)
-        self.auto_restore = config.getboolean('oled', 'auto_restore', fallback=True)
-        
-        # 界面切换状态
-        self.current_mode = 'normal'
-        
-        self.logger.info("界面切换任务已启动")
-    
-    def switch_to_motion_detected(self):
-        """切换到运动检测界面"""
-        self.logger.info("切换到运动检测界面")
-        self._switch_interface('motion_detected', 'Motion Detected!')
-    
-    def switch_to_normal(self):
-        """切换到正常界面"""
-        self.logger.info("切换到正常界面")
-        self._switch_interface('normal', 'System Ready')
-    
-    def switch_to_custom(self, message: str, duration: int = None):
-        """切换到自定义界面"""
-        self.logger.info(f"切换到自定义界面: {message}")
-        self._switch_interface('custom', message, duration)
-    
-    def _switch_interface(self, mode: str, message: str, duration: int = None):
-        """执行界面切换"""
-        try:
-            # 发送界面切换命令
-            self.oled_manager._send_oled_display_command({
-                'mode': mode,
-                'message': message,
-                'timestamp': time.time()
-            })
-            
-            # 设置定时器恢复正常界面
-            if duration is None:
-                duration = self.switch_duration
-            
-            if mode != 'normal' and self.auto_restore:
-                timer = threading.Timer(duration, self.switch_to_normal)
-                timer.start()
-                self.logger.debug(f"设置 {duration} 秒后恢复正常界面")
-                
-        except Exception as e:
-            self.logger.error(f"界面切换失败: {e}")
+from temperature_forwarder import TemperatureForwarder
+from interface_switch_task import InterfaceSwitchTask
 
 class OLEDManager(MQTTSubscriber):
     """OLED显示管理器 - 协调温湿度转发和界面切换任务"""
@@ -179,6 +104,8 @@ class OLEDManager(MQTTSubscriber):
     def stop(self):
         """停止OLED管理器"""
         self.logger.info("正在停止OLED管理器...")
+        self.temp_forwarder.stop()
+        self.interface_task.stop()
         super().stop()
 
 def main():
