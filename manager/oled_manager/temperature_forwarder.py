@@ -20,13 +20,17 @@ class TemperatureForwarder:
     def forward_temperature_humidity(self, temperature: float, humidity: float):
         """直接转发温湿度数据到OLED"""
         try:
-            # 直接发送温湿度显示命令
-            self.oled_manager._send_oled_display_command({
-                'mode': 'temperature',
-                'temperature': temperature,
-                'humidity': humidity,
-                'timestamp': time.time()
-            })
+            # 按照指定格式发送温湿度显示命令
+            display_message = {
+                "action": "display_temperature",
+                "params": {
+                    "temperature": temperature,
+                    "humidity": humidity,
+                    "timestamp": time.time()
+                }
+            }
+            
+            self.oled_manager._send_oled_display_command(display_message)
             self.logger.debug(f"转发温湿度数据: {temperature}°C, {humidity}%")
         except Exception as e:
             self.logger.error(f"转发温湿度数据失败: {e}")
