@@ -117,7 +117,7 @@ class OLEDSubscriber:
                     self._start_time_display()  # 开始时间显示定时器
                     self.logger.info("切换到默认界面（时间显示）")
                     
-                elif action == 'display_temperature':
+                elif action == 'update_temperature_humidity':
                     # 显示温湿度数据
                     temperature = params.get('temperature')
                     humidity = params.get('humidity')
