@@ -305,8 +305,11 @@ EOF
             fi
         fi
     done
+    
+    log_success "systemd服务文件生成完成"
+}
 
-    # 设置manager虚拟环境
+# 设置manager虚拟环境
 setup_manager_venvs() {
     log_info "设置manager虚拟环境..."
     
