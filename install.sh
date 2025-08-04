@@ -372,15 +372,17 @@ generate_manager_services() {
         if [[ -d "$manager_dir" ]]; then
             manager_name=$(basename "$manager_dir")
             
-            # 检查是否有主程序文件
-            if [[ -f "${manager_dir}${manager_name}.py" ]]; then
+            # 检查是否有主程序文件（寻找以_manager.py结尾的文件）
+            manager_files=(${manager_dir}*_manager.py)
+            if [[ ${#manager_files[@]} -gt 0 && -f "${manager_files[0]}" ]]; then
+                manager_file=$(basename "${manager_files[0]}")
                 service_file="services/${manager_name}-manager.service"
                 
                 log_info "生成manager服务文件: $service_file"
                 
                 abs_manager_dir="${PROJECT_DIR}/manager/${manager_name}"
                 abs_python="${abs_manager_dir}/venv/bin/python"
-                abs_entry="${abs_manager_dir}/${manager_name}.py"
+                abs_entry="${abs_manager_dir}/${manager_file}"
                 cat > "$service_file" << EOF
 [Unit]
 Description=${manager_name} Manager Service
@@ -415,10 +417,11 @@ EOF
             fi
         fi
     done
-}
     
-    log_success "systemd服务文件生成完成"
+    log_success "manager服务文件生成完成"
 }
+
+
 
 # 安装并启动systemd服务
 install_and_start_services() {
