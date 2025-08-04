@@ -7,11 +7,54 @@
 1. **订阅所有传感器数据**：温湿度、PIR运动检测、按钮、电位器
 2. **业务逻辑处理**：根据传感器类型进行相应的业务处理
 3. **消息路由**：将处理后的消息发送给相应的执行器
+4. **OLED状态管理**：智能管理OLED显示状态，包括温湿度显示和时间显示
 
 ## 业务逻辑
 
 ### 统一转发机制
 管理器订阅 `sensor` 主题，接收所有传感器数据，然后统一转发到对应的执行器。
+
+### OLED智能控制逻辑
+
+#### 显示状态管理
+- **默认状态**：显示时间（无人时）
+- **有人状态**：显示温湿度分屏（检测到人时）
+- **自动切换**：10分钟后自动切换回时间显示
+
+#### 控制消息格式
+
+**发送到OLED的控制消息：**
+```json
+{
+    "action": "show_time",
+    "data": {}
+}
+```
+
+```json
+{
+    "action": "show_temp_humi",
+    "data": {
+        "temperature": 25.5,
+        "humidity": 60.2
+    }
+}
+```
+
+```json
+{
+    "action": "update_temp_humi",
+    "data": {
+        "temperature": 25.5,
+        "humidity": 60.2
+    }
+}
+```
+
+#### 控制动作说明
+- `show_time`: 切换到时间显示模式
+- `show_temp_humi`: 切换到温湿度显示模式（分屏显示）
+- `update_temp_humi`: 更新温湿度数据（当前在温湿度显示模式时）
 
 ### 消息格式
 
@@ -36,8 +79,8 @@
 ```
 
 ### 传感器类型映射
-- `temperature_humidity` → `actuator/oled`
-- `pir_motion` → `actuator/oled`
+- `temperature_humidity` → `actuator/oled` (智能控制)
+- `pir_motion` → `actuator/oled` (智能控制)
 - `button` → `actuator/buzzer`
 - `potentiometer` → `actuator/audio`
 
@@ -60,18 +103,38 @@ log_level = INFO
 ## 消息流程
 
 1. **传感器发布数据** → `sensor` 主题
-2. **管理器订阅数据** → 统一转发
-3. **管理器发布消息** → `actuator/{actuator_type}`
-4. **执行器订阅消息** → 执行相应动作
+2. **管理器订阅数据** → 智能处理
+3. **管理器发布控制消息** → `actuator/{actuator_type}`
+4. **执行器订阅控制消息** → 执行相应动作
 
 ## 主题映射
 
-| 传感器类型 | 订阅主题 | 执行器 | 发布主题 |
-|------------|----------|--------|----------|
-| temperature_humidity | `sensor` | OLED | `actuator/oled` |
-| pir_motion | `sensor` | OLED | `actuator/oled` |
-| button | `sensor` | 蜂鸣器 | `actuator/buzzer` |
-| potentiometer | `sensor` | 音频 | `actuator/audio` |
+| 传感器类型 | 订阅主题 | 执行器 | 发布主题 | 控制类型 |
+|------------|----------|--------|----------|----------|
+| temperature_humidity | `sensor` | OLED | `actuator/oled` | 智能控制 |
+| pir_motion | `sensor` | OLED | `actuator/oled` | 智能控制 |
+| button | `sensor` | 蜂鸣器 | `actuator/buzzer` | 直接转发 |
+| potentiometer | `sensor` | 音频 | `actuator/audio` | 直接转发 |
+
+## OLED智能控制流程
+
+### 1. 默认状态
+- OLED显示当前时间
+- 每秒更新时间显示
+
+### 2. 检测到人时
+- 切换到温湿度分屏显示
+- 启动小猫眼睛闪烁动画
+- 启动10分钟定时器
+
+### 3. 温湿度更新
+- 如果当前在温湿度显示模式，立即更新显示
+- 保存最新温湿度数据
+
+### 4. 10分钟后
+- 自动切换回时间显示
+- 停止小猫眼睛闪烁动画
+- 恢复时间更新
 
 ## 运行方式
 
@@ -268,6 +331,7 @@ sudo systemctl daemon-reload
 - 接收到的传感器数据
 - 业务逻辑处理过程
 - 发送给执行器的消息
+- OLED状态切换信息
 - 错误和警告信息
 
 日志级别可以通过配置文件中的 `log_level` 参数调整。 
