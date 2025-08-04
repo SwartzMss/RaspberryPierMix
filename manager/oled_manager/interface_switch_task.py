@@ -1,83 +1,79 @@
 # -*- coding: utf-8 -*-
 """
 界面显示任务模块
-专门处理不同界面的显示，如运动检测、警告等
+专门处理不同界面的显示事件发布
 """
 
 import logging
-import threading
 import time
 from typing import Dict, Any
 
 
 class InterfaceDisplayTask:
-    """界面显示任务 - 处理不同界面的显示"""
+    """界面显示任务 - 发布界面显示事件"""
     
     def __init__(self, oled_manager, config):
         self.oled_manager = oled_manager
         self.logger = logging.getLogger(__name__)
-        
-        # 从配置读取显示持续时间
-        self.display_duration = config.getint('oled', 'switch_duration', fallback=5)
-        self.auto_restore = config.getboolean('oled', 'auto_restore', fallback=True)
-        
-        # 当前界面状态
-        self.current_interface = 'normal'
-        
         self.logger.info("界面显示任务已启动")
     
     def show_motion_detected(self):
-        """显示运动检测界面"""
-        self.logger.info("显示运动检测界面")
-        self._show_interface('motion_detected', 'Motion Detected!')
+        """发布运动检测事件 - 切换到温湿度界面10分钟"""
+        self.logger.info("发布运动检测事件")
+        self._publish_interface_event('switch_to_temperature', {
+            'message': 'Motion Detected!',
+            'duration': 600  # 10分钟
+        })
     
     def show_normal(self):
-        """显示正常界面"""
-        self.logger.info("显示正常界面")
-        self._show_interface('normal', 'System Ready')
+        """发布正常界面事件"""
+        self.logger.info("发布正常界面事件")
+        self._publish_interface_event('switch_to_normal', {
+            'message': 'System Ready'
+        })
     
     def show_custom(self, message: str, duration: int = None):
-        """显示自定义界面"""
-        self.logger.info(f"显示自定义界面: {message}")
-        self._show_interface('custom', message, duration)
+        """发布自定义界面事件"""
+        self.logger.info(f"发布自定义界面事件: {message}")
+        params = {'message': message}
+        if duration:
+            params['duration'] = duration
+        self._publish_interface_event('switch_to_custom', params)
     
     def show_warning(self, message: str, duration: int = None):
-        """显示警告界面"""
-        self.logger.info(f"显示警告界面: {message}")
-        self._show_interface('warning', message, duration)
+        """发布警告界面事件"""
+        self.logger.info(f"发布警告界面事件: {message}")
+        params = {'message': message}
+        if duration:
+            params['duration'] = duration
+        self._publish_interface_event('switch_to_warning', params)
     
     def show_info(self, message: str, duration: int = None):
-        """显示信息界面"""
-        self.logger.info(f"显示信息界面: {message}")
-        self._show_interface('info', message, duration)
+        """发布信息界面事件"""
+        self.logger.info(f"发布信息界面事件: {message}")
+        params = {'message': message}
+        if duration:
+            params['duration'] = duration
+        self._publish_interface_event('switch_to_info', params)
     
-    def _show_interface(self, interface_type: str, message: str, duration: int = None):
-        """显示指定界面"""
+    def _publish_interface_event(self, action: str, params: Dict[str, Any]):
+        """发布界面事件"""
         try:
-            # 构建消息格式
-            display_message = {
-                "action": "show_interface",
+            # 构建事件消息
+            event_message = {
+                "action": action,
                 "params": {
-                    "interface": interface_type,
-                    "message": message,
+                    **params,
                     "timestamp": time.time()
                 }
             }
             
-            # 发送界面显示命令
-            self.oled_manager._send_oled_display_command(display_message)
-            
-            # 设置定时器恢复正常界面
-            if duration is None:
-                duration = self.display_duration
-            
-            if interface_type != 'normal' and self.auto_restore:
-                timer = threading.Timer(duration, self.show_normal)
-                timer.start()
-                self.logger.debug(f"设置 {duration} 秒后恢复正常界面")
+            # 发送界面事件
+            self.oled_manager._send_oled_display_command(event_message)
+            self.logger.debug(f"已发布界面事件: {action}")
                 
         except Exception as e:
-            self.logger.error(f"界面显示失败: {e}")
+            self.logger.error(f"发布界面事件失败: {e}")
     
     def stop(self):
         """停止界面显示任务"""
