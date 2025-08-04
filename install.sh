@@ -305,6 +305,49 @@ EOF
             fi
         fi
     done
+
+    # 生成manager服务文件
+    if [[ -d "manager" ]] && [[ -f "manager/manager_sub.py" ]]; then
+        service_file="services/manager-subscriber.service"
+        
+        log_info "生成manager服务文件: $service_file"
+        
+        # 生成manager服务文件内容
+        abs_manager_dir="${PROJECT_DIR}/manager"
+        abs_python="${abs_manager_dir}/venv/bin/python"
+        abs_entry="${abs_manager_dir}/manager_sub.py"
+        cat > "$service_file" << EOF
+[Unit]
+Description=Sensor Data Manager MQTT Subscriber
+Documentation=https://github.com/SwartzMss/RaspberryPierMix
+After=network.target mosquitto.service
+Wants=mosquitto.service
+
+[Service]
+Type=simple
+User=${CURRENT_USER}
+Group=${CURRENT_USER}
+WorkingDirectory=${abs_manager_dir}
+ExecStart=${abs_python} ${abs_entry}
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# 安全设置
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=${PROJECT_DIR}
+
+[Install]
+WantedBy=multi-user.target
+EOF
+        
+        log_success "manager服务文件生成完成: $service_file"
+    else
+        log_warning "未找到manager目录或manager_sub.py文件，跳过manager服务生成"
+    fi
     
     log_success "systemd服务文件生成完成"
 }
