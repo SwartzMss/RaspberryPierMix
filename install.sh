@@ -306,19 +306,84 @@ EOF
         fi
     done
 
-    # 生成manager服务文件
-    if [[ -d "manager" ]] && [[ -f "manager/manager_sub.py" ]]; then
-        service_file="services/manager-subscriber.service"
-        
-        log_info "生成manager服务文件: $service_file"
-        
-        # 生成manager服务文件内容
-        abs_manager_dir="${PROJECT_DIR}/manager"
-        abs_python="${abs_manager_dir}/venv/bin/python"
-        abs_entry="${abs_manager_dir}/manager_sub.py"
-        cat > "$service_file" << EOF
+    # 设置manager虚拟环境
+setup_manager_venvs() {
+    log_info "设置manager虚拟环境..."
+    
+    if [[ ! -d "manager" ]]; then
+        log_warning "manager目录不存在，跳过虚拟环境设置"
+        return 0
+    fi
+    
+    if [[ ! -d "common" ]]; then
+        log_warning "common目录不存在，跳过虚拟环境设置"
+        return 0
+    fi
+    
+    for manager_dir in manager/*/; do
+        if [[ -d "$manager_dir" ]]; then
+            manager_name=$(basename "$manager_dir")
+            log_info "处理manager: $manager_name"
+            
+            if [[ -f "${manager_dir}requirements.txt" ]]; then
+                log_info "在 $manager_name 中创建虚拟环境..."
+                cd "$manager_dir"
+                
+                if [[ ! -d "venv" ]]; then
+                    python3 -m venv venv
+                    log_success "虚拟环境创建完成: $manager_name"
+                else
+                    log_info "虚拟环境已存在: $manager_name"
+                fi
+                
+                log_info "安装依赖: $manager_name"
+                source venv/bin/activate
+                pip install --upgrade pip
+                
+                if [[ -f "../../common/requirements.txt" ]]; then
+                    log_info "安装common模块依赖"
+                    pip install -r ../../common/requirements.txt
+                fi
+                
+                pip install -r requirements.txt
+                deactivate
+                
+                log_success "依赖安装完成: $manager_name"
+                cd - > /dev/null
+            else
+                log_warning "未找到requirements.txt文件: $manager_name"
+            fi
+        fi
+    done
+    
+    log_success "manager虚拟环境设置完成"
+}
+
+# 生成manager服务文件
+generate_manager_services() {
+    log_info "生成manager服务文件..."
+    
+    if [[ ! -d "manager" ]]; then
+        log_warning "manager目录不存在，跳过manager服务生成"
+        return 0
+    fi
+    
+    for manager_dir in manager/*/; do
+        if [[ -d "$manager_dir" ]]; then
+            manager_name=$(basename "$manager_dir")
+            
+            # 检查是否有主程序文件
+            if [[ -f "${manager_dir}${manager_name}.py" ]]; then
+                service_file="services/${manager_name}-manager.service"
+                
+                log_info "生成manager服务文件: $service_file"
+                
+                abs_manager_dir="${PROJECT_DIR}/manager/${manager_name}"
+                abs_python="${abs_manager_dir}/venv/bin/python"
+                abs_entry="${abs_manager_dir}/${manager_name}.py"
+                cat > "$service_file" << EOF
 [Unit]
-Description=Sensor Data Manager MQTT Subscriber
+Description=${manager_name} Manager Service
 Documentation=https://github.com/SwartzMss/RaspberryPierMix
 After=network.target mosquitto.service
 Wants=mosquitto.service
@@ -343,11 +408,14 @@ ReadWritePaths=${PROJECT_DIR}
 [Install]
 WantedBy=multi-user.target
 EOF
-        
-        log_success "manager服务文件生成完成: $service_file"
-    else
-        log_warning "未找到manager目录或manager_sub.py文件，跳过manager服务生成"
-    fi
+                
+                log_success "manager服务文件生成完成: $service_file"
+            else
+                log_warning "未找到主程序文件: ${manager_name}.py"
+            fi
+        fi
+    done
+}
     
     log_success "systemd服务文件生成完成"
 }
@@ -486,7 +554,9 @@ main() {
     install_mosquitto
     setup_sensor_venvs
     setup_actuator_venvs
+    setup_manager_venvs
     generate_systemd_services
+    generate_manager_services
     install_and_start_services
     
     log_success "安装完成！"

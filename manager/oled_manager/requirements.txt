@@ -1,0 +1,8 @@
+# OLED Manager 依赖包
+# 基础依赖已在 common/requirements.txt 中定义
+# 这里可以添加 OLED Manager 特有的依赖包
+
+# 如果需要额外的依赖包，可以在这里添加
+# 例如：
+# paho-mqtt>=1.6.1
+# configparser>=5.0.0 
