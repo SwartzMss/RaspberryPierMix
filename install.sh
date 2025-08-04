@@ -379,9 +379,9 @@ generate_manager_services() {
             manager_files=(${manager_dir}*_manager.py)
             if [[ ${#manager_files[@]} -gt 0 && -f "${manager_files[0]}" ]]; then
                 manager_file=$(basename "${manager_files[0]}")
-                # 使用manager文件名作为服务名称（去掉.py后缀）
-                manager_service_name=$(echo "$manager_file" | sed 's/\.py$//')
-                service_file="services/${manager_service_name}.service"
+                # 从manager文件名提取前缀（去掉_manager.py后缀），然后组合成服务名称
+                manager_prefix=$(echo "$manager_file" | sed 's/_manager\.py$//')
+                service_file="services/${manager_prefix}-manager.service"
                 
                 log_info "生成manager服务文件: $service_file"
                 
