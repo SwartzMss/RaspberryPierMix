@@ -22,7 +22,7 @@ class TemperatureForwarder:
         try:
             # 按照指定格式发送温湿度显示命令
             display_message = {
-                "action": "display_temperature",
+                "action": "update_temperature_humidity",
                 "params": {
                     "temperature": temperature,
                     "humidity": humidity,

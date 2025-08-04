@@ -16,7 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 
 from mqtt_base import MQTTSubscriber
 from temperature_forwarder import TemperatureForwarder
-from interface_switch_task import InterfaceSwitchTask
+from interface_switch_task import InterfaceDisplayTask
 
 class OLEDManager(MQTTSubscriber):
     """OLED显示管理器 - 协调温湿度转发和界面切换任务"""
@@ -34,7 +34,7 @@ class OLEDManager(MQTTSubscriber):
         
         # 创建两个独立的任务
         self.temp_forwarder = TemperatureForwarder(self)
-        self.interface_task = InterfaceSwitchTask(self, config)
+        self.interface_task = InterfaceDisplayTask(self, config)
         
         self.logger.info("OLED管理器初始化完成")
     
@@ -79,9 +79,9 @@ class OLEDManager(MQTTSubscriber):
         motion_detected = params.get('motion_detected', False)
         
         if motion_detected:
-            # 触发界面切换任务
-            self.interface_task.switch_to_motion_detected()
-            self.logger.info("检测到运动，触发界面切换")
+            # 触发界面显示任务
+            self.interface_task.show_motion_detected()
+            self.logger.info("检测到运动，显示运动检测界面")
     
     def _send_oled_display_command(self, display_data: Dict[str, Any]):
         """发送OLED显示命令"""
