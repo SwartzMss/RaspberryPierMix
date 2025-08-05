@@ -45,7 +45,7 @@ pip install gpiozero paho-mqtt
    python button_pub.py
    ```
 3. 按下按键时，会向MQTT发布标准化的传感器数据：
-   - topic: `sensor/sensor`
+   - topic: `sensor`
    - payload: 
    ```json
    {
