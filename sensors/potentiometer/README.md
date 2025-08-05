@@ -90,7 +90,7 @@ python potentiometer_pub.py
 
 ## 📡 MQTT消息格式
 
-**主题**: `sensor/potentiometer`
+**主题**: `sensor`
 
 **消息内容**:
 ```json
