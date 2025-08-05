@@ -23,8 +23,6 @@ RaspberryPierMix/
 │   │   ├── oled_manager.py   # OLED管理器主程序
 │   │   ├── config.ini        # OLED业务配置
 │   │   └── README.md         # OLED业务说明
-│   ├── led_manager/         # LED业务管理器（未来扩展）
-│   └── README.md            # 管理器模块说明
 ├── common/                 # 公共模块
 │   ├── mqtt_base.py        # MQTT基础类
 │   └── requirements.txt     # 公共依赖
@@ -54,7 +52,6 @@ RaspberryPierMix/
 
 3. **业务管理器模块** (`manager/`) - 业务逻辑层
    - **OLED管理器** (`oled_manager/`) - 处理OLED显示相关业务
-   - **LED管理器** (`led_manager/`) - 处理LED控制业务（未来扩展）
    - **其他管理器** - 根据业务需求扩展
 
 ### 消息流程
@@ -67,7 +64,7 @@ RaspberryPierMix/
 
 ### OLED管理器 (`manager/oled_manager/`)
 
-统一的业务管理器，处理所有传感器数据并根据业务逻辑进行相应的处理。
+统一的业务管理器，处理相关传感器数据并根据业务逻辑进行相应的处理。
 
 **支持的传感器：**
 
@@ -75,15 +72,11 @@ RaspberryPierMix/
 - `temperature_humidity` - 温湿度传感器
 - `pir_motion` - PIR运动检测传感器
 
-#### 简单转发传感器（直接转发）
-- `button` - 按钮传感器 → 蜂鸣器
-- `potentiometer` - 电位器传感器 → 音频播放
 
 **主要功能：**
 - OLED显示控制（温湿度显示、运动检测响应）
 - 定时器管理（10分钟自动切换）
 - 状态管理
-- 简单数据转发
 
 ## 使用方法
 
@@ -98,31 +91,6 @@ python oled_manager.py
 
 # 后台运行
 nohup python oled_manager.py > oled.log 2>&1 &
-```
-
-### 运行LED管理器（未来扩展）
-
-```bash
-# 进入LED管理器目录
-cd manager/led_manager
-
-# 运行LED管理器
-python led_manager.py
-
-# 后台运行
-nohup python led_manager.py > led.log 2>&1 &
-```
-
-### 同时运行多个管理器
-
-```bash
-# 终端1 - 运行OLED管理器
-cd manager/oled_manager
-python oled_manager.py
-
-# 终端2 - 运行LED管理器
-cd manager/led_manager
-python led_manager.py
 ```
 
 ## 配置管理
@@ -143,7 +111,6 @@ topic_prefix = sensor
 每个业务管理器都有独立的配置文件：
 
 - `manager/oled_manager/config.ini` - OLED业务配置
-- `manager/led_manager/config.ini` - LED业务配置（未来）
 
 ## 安装和部署
 
@@ -156,20 +123,6 @@ cd RaspberryPierMix
 
 # 运行安装脚本
 ./install.sh
-```
-
-### 手动安装
-
-```bash
-# 安装依赖
-pip install paho-mqtt
-
-# 启动MQTT代理
-sudo systemctl start mosquitto
-
-# 启动业务管理器
-cd manager/oled_manager
-python oled_manager.py
 ```
 
 ## 扩展指南
