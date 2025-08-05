@@ -100,7 +100,7 @@ OUT         →    GPIO 23 (BCM编号，物理引脚16，可配置)
 
 ### 人体检测消息
 检测到人体时，会向MQTT发布标准化的传感器数据：
-- topic: `sensor/sensor`
+- topic: `sensor`
 - payload: 
 ```json
 {
