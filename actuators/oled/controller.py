@@ -37,6 +37,7 @@ class OLEDSubscriber:
         self.show_temp_mode = False  # 是否显示温湿度模式
         self.time_timer = None       # 时间显示定时器
         self.time_update_interval = 1  # 时间更新间隔1秒
+        self.default_timer = None    # 恢复默认界面定时器
 
     def on_connect(self, client, userdata, flags, rc):
         if rc == 0:
@@ -104,8 +105,14 @@ class OLEDSubscriber:
                     # 设置定时器恢复到默认界面
                     duration = params.get('duration', 600)  # 默认10分钟
                     if duration > 0:
-                        timer = threading.Timer(duration, self._switch_to_default)
-                        timer.start()
+                        # 取消之前的定时器（如果存在）
+                        if self.default_timer:
+                            self.default_timer.cancel()
+                            self.logger.debug("取消之前的恢复默认界面定时器")
+                        
+                        # 创建新的定时器
+                        self.default_timer = threading.Timer(duration, self._switch_to_default)
+                        self.default_timer.start()
                         self.logger.info(f"设置 {duration} 秒后恢复默认界面")
                     
                 elif action == 'switch_to_default':
@@ -144,6 +151,7 @@ class OLEDSubscriber:
     
     def _switch_to_default(self):
         """切换到默认界面"""
+        self.default_timer = None  # 清除定时器引用
         self.show_default()
     
     def show_default(self):
@@ -167,6 +175,9 @@ class OLEDSubscriber:
             if self.time_timer:
                 self.time_timer.cancel()
                 self.logger.info("已取消时间显示定时器")
+            if self.default_timer:
+                self.default_timer.cancel()
+                self.logger.info("已取消恢复默认界面定时器")
             self.oled.stop_cat_animation()  # 停止小猫眼睛闪烁
             self.client.disconnect()
             self.logger.info("OLED订阅者已停止") 
