@@ -78,52 +78,7 @@ RaspberryPierMix/
 - 定时器管理（10分钟自动切换）
 - 状态管理
 
-## 使用方法
 
-### 运行OLED管理器
-
-```bash
-# 进入OLED管理器目录
-cd manager/oled_manager
-
-# 运行OLED管理器
-python oled_manager.py
-
-# 后台运行
-nohup python oled_manager.py > oled.log 2>&1 &
-```
-
-## 配置管理
-
-### 全局配置
-
-`manager_config.ini` - 全局MQTT配置
-
-```ini
-[mqtt]
-broker = localhost
-port = 1883
-topic_prefix = sensor
-```
-
-### 业务配置
-
-每个业务管理器都有独立的配置文件：
-
-- `manager/oled_manager/config.ini` - OLED业务配置
-
-## 安装和部署
-
-### 快速安装
-
-```bash
-# 克隆项目
-git clone <repository-url>
-cd RaspberryPierMix
-
-# 运行安装脚本
-./install.sh
-```
 
 ## 扩展指南
 
