@@ -79,6 +79,67 @@ RaspberryPierMix/
 - 状态管理
 
 
+## 🔧 快速部署与服务管理
+
+### 传统方式（系统服务）
+
+1. **运行安装脚本**（自动创建虚拟环境、生成并安装 systemd 服务）：
+   ```bash
+   chmod +x install.sh
+   sudo ./install.sh
+   ```
+
+2. **卸载服务**（停止、禁用并删除所有 systemd 服务）：
+   ```bash
+   chmod +x uninstall.sh
+   sudo ./uninstall.sh
+   ```
+
+2. **调试与管理 systemd 服务**
+
+   - **查看服务状态**
+     ```bash
+     sudo systemctl status temperature_humidity-publisher.service
+     ```
+   - **启动服务**
+     ```bash
+     sudo systemctl start temperature_humidity-publisher.service
+     ```
+   - **重启服务**
+     ```bash
+     sudo systemctl restart temperature_humidity-publisher.service
+     ```
+   - **停止服务**
+     ```bash
+     sudo systemctl stop temperature_humidity-publisher.service
+     ```
+   - **实时查看服务日志**
+     ```bash
+     sudo journalctl -u temperature_humidity-publisher.service -f
+     ```
+   - **修改服务文件后需重载配置**
+     ```bash
+     sudo systemctl daemon-reload
+     sudo systemctl restart temperature_humidity-publisher.service
+     ```
+
+   - **完全卸载服务**
+     ```bash
+     sudo ./uninstall.sh
+     ```
+     
+   - **手动调试与测试**
+
+      若仅需在命令行下验证发布和订阅，可按以下步骤操作：
+      
+      ```bash
+      mosquitto_sub -t sensor/temperature_humidity -v
+      mosquitto_sub -t sensor/pir_motion -v
+      ```
+      
+      ```bash
+      mosquitto_pub -t actuator/test -m '{"cmd": "ON", "id": "node1"}'
+      ```
 
 ## 扩展指南
 
