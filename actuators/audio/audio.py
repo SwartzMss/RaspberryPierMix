@@ -37,11 +37,32 @@ class AudioController:
         os.makedirs(self.audio_dir, exist_ok=True)
         
         self.control_name = config.get('control_name', 'Headphone')  # 音量控制项名称
-        # 选择可用的 TTS 命令
+        # 选择可用的 TTS 命令（离线）
         self.tts_cmd = 'espeak'
         if shutil.which('espeak') is None and shutil.which('espeak-ng') is not None:
             self.tts_cmd = 'espeak-ng'
-        logger.info(f"音频控制器初始化完成: card={self.card_index}, control={self.control_name}")
+
+        # 在线TTS开关与配置
+        self.use_online_tts = bool(config.get('use_online_tts', False))
+        self.edge_voice = str(config.get('edge_voice', 'zh-CN-XiaoxiaoNeural'))
+        self.edge_rate = str(config.get('edge_rate', '+0%'))
+        self.edge_volume = str(config.get('edge_volume', '+0%'))
+        self._edge_api = None
+        if self.use_online_tts:
+            try:
+                from .edge_tts_api import EdgeTTSApi  # lazy import for optional dep
+                self._edge_api = EdgeTTSApi(
+                    voice=self.edge_voice,
+                    rate=self.edge_rate,
+                    volume=self.edge_volume,
+                )
+            except Exception as e:
+                logger.error(f"初始化在线TTS失败，将回退到离线TTS: {e}")
+                self.use_online_tts = False
+
+        logger.info(
+            f"音频控制器初始化完成: card={self.card_index}, control={self.control_name}, online_tts={self.use_online_tts}"
+        )
     
     def set_volume(self, volume: int) -> bool:
         """
@@ -97,21 +118,47 @@ class AudioController:
 
         with self._lock:
             try:
-                # 通过管道将 espeak 音频输出到 aplay，并指定声卡
-                # 使用 plughw 以便自动完成采样率/格式转换
-                safe_text = shlex.quote(text)
                 device = f"plughw:{self.card_index},0"
-                cmd = f"{self.tts_cmd} -s 150 -v zh --stdout {safe_text} | aplay -q -D {device}"
+                if self.use_online_tts and self._edge_api is not None:
+                    # 在线TTS：获取PCM后写入临时WAV，再用 aplay 播放
+                    import tempfile
+                    import wave
+                    import numpy as np
 
-                # 启动播报进程（独立进程组，便于整体终止管道内所有子进程）
-                self.current_process = subprocess.Popen(
-                    cmd,
-                    shell=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    preexec_fn=os.setsid,
-                    start_new_session=True,
-                )
+                    audio_data, sample_rate = self._edge_api.sync_text_to_audio(text)
+                    if audio_data is None or sample_rate is None:
+                        logger.error("在线TTS转换失败")
+                        return False
+
+                    tmp_wav = tempfile.NamedTemporaryFile(delete=False, suffix='.wav', dir=self.audio_dir)
+                    with wave.open(tmp_wav.name, 'wb') as wf:
+                        channels = audio_data.shape[1] if len(audio_data.shape) > 1 else 1
+                        wf.setnchannels(channels)
+                        wf.setsampwidth(2)
+                        wf.setframerate(sample_rate)
+                        wf.writeframes(np.asarray(audio_data, dtype=np.int16).tobytes())
+
+                    cmd = f"aplay -q -D {device} {shlex.quote(tmp_wav.name)}"
+                    self.current_process = subprocess.Popen(
+                        cmd,
+                        shell=True,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        preexec_fn=os.setsid,
+                        start_new_session=True,
+                    )
+                else:
+                    # 离线TTS：通过管道将 espeak 音频输出到 aplay，并指定声卡
+                    safe_text = shlex.quote(text)
+                    cmd = f"{self.tts_cmd} -s 150 -v zh --stdout {safe_text} | aplay -q -D {device}"
+                    self.current_process = subprocess.Popen(
+                        cmd,
+                        shell=True,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        preexec_fn=os.setsid,
+                        start_new_session=True,
+                    )
 
                 logger.info(f"开始播报文字: {text}")
                 return True

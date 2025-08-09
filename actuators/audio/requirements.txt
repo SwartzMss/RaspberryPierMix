@@ -1,2 +1,5 @@
 configparser
 paho-mqtt>=1.6.1 
+edge-tts>=6.1.14
+miniaudio>=1.59
+numpy>=1.24
