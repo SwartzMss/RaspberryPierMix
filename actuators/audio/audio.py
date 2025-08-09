@@ -31,6 +31,9 @@ class AudioController:
         self.current_process: Optional[subprocess.Popen] = None
         # 使用可重入锁，避免在 speak_text 内部调用 stop_audio 造成死锁
         self._lock = threading.RLock()
+        # 播报线程与控制
+        self._play_thread: Optional[threading.Thread] = None
+        self._generation_id: int = 0
         
         # 确保音频目录存在
         os.makedirs(self.audio_dir, exist_ok=True)
@@ -97,6 +100,53 @@ class AudioController:
             logger.error(f"设置音量时发生错误: {e}")
             return False
     
+    def _play_text_worker(self, text: str, generation_id: int) -> None:
+        """在后台线程中执行文本转音频并播放，避免阻塞MQTT回调线程"""
+        try:
+            # 文本转音频（在线TTS）
+            from typing import Tuple
+            import numpy as np
+            import tempfile
+            import wave
+
+            audio_data, sample_rate = self._edge_api.sync_text_to_audio(text)  # type: ignore
+            if audio_data is None or sample_rate is None:
+                logger.error("在线TTS转换失败")
+                return
+
+            # 若期间被新的任务取代，则丢弃本次结果
+            if generation_id != self._generation_id:
+                logger.info("检测到新任务取代，放弃当前生成的音频")
+                return
+
+            # 写入临时WAV并播放
+            tmp_wav = tempfile.NamedTemporaryFile(delete=False, suffix='.wav', dir=self.audio_dir)
+            with wave.open(tmp_wav.name, 'wb') as wf:
+                channels = audio_data.shape[1] if len(audio_data.shape) > 1 else 1
+                wf.setnchannels(channels)
+                wf.setsampwidth(2)
+                wf.setframerate(sample_rate)
+                wf.writeframes(np.asarray(audio_data, dtype=np.int16).tobytes())
+
+            device = f"plughw:{self.card_index},0"
+            cmd = f"aplay -q -D {device} {shlex.quote(tmp_wav.name)}"
+            with self._lock:
+                # 若期间被新的任务取代，则丢弃播放
+                if generation_id != self._generation_id:
+                    logger.info("检测到新任务取代，取消当前播放")
+                    return
+                self.current_process = subprocess.Popen(
+                    cmd,
+                    shell=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    preexec_fn=os.setsid,
+                    start_new_session=True,
+                )
+            logger.info(f"开始播报文字(在线): {text}")
+        except Exception as e:
+            logger.error(f"后台播放线程异常: {e}")
+
     def speak_text(self, text: str) -> bool:
         """
         播报文字
@@ -107,46 +157,26 @@ class AudioController:
         Returns:
             播报是否成功启动
         """
-        # 先停止当前播放，避免在持锁状态下嵌套调用造成死锁
+        # 先停止当前播放，避免与新任务冲突
         self.stop_audio()
 
-        with self._lock:
-            try:
-                # 在线TTS：获取PCM后写入临时WAV，再用 aplay 播放
-                import tempfile
-                import wave
-                import numpy as np
+        try:
+            # 增加任务代号，替换旧任务
+            with self._lock:
+                self._generation_id += 1
+                generation_id = self._generation_id
 
-                device = f"plughw:{self.card_index},0"
-                audio_data, sample_rate = self._edge_api.sync_text_to_audio(text)
-                if audio_data is None or sample_rate is None:
-                    logger.error("在线TTS转换失败")
-                    return False
-
-                tmp_wav = tempfile.NamedTemporaryFile(delete=False, suffix='.wav', dir=self.audio_dir)
-                with wave.open(tmp_wav.name, 'wb') as wf:
-                    channels = audio_data.shape[1] if len(audio_data.shape) > 1 else 1
-                    wf.setnchannels(channels)
-                    wf.setsampwidth(2)
-                    wf.setframerate(sample_rate)
-                    wf.writeframes(np.asarray(audio_data, dtype=np.int16).tobytes())
-
-                cmd = f"aplay -q -D {device} {shlex.quote(tmp_wav.name)}"
-                self.current_process = subprocess.Popen(
-                    cmd,
-                    shell=True,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    preexec_fn=os.setsid,
-                    start_new_session=True,
-                )
-
-                logger.info(f"开始播报文字: {text}")
-                return True
-
-            except Exception as e:
-                logger.error(f"播报文字时发生错误: {e}")
-                return False
+            # 启动后台线程执行TTS与播放
+            worker = threading.Thread(
+                target=self._play_text_worker, args=(text, generation_id), daemon=True
+            )
+            self._play_thread = worker
+            worker.start()
+            logger.info(f"已启动后台播报任务: {text}")
+            return True
+        except Exception as e:
+            logger.error(f"启动后台播报任务失败: {e}")
+            return False
     
     def stop_audio(self) -> bool:
         """
