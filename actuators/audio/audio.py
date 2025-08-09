@@ -30,7 +30,8 @@ class AudioController:
         self.card_index = config.get('card_index', 2)  # 默认USB声卡索引
         self.audio_dir = config.get('audio_dir', './tmp')  # 临时音频文件目录
         self.current_process: Optional[subprocess.Popen] = None
-        self._lock = threading.Lock()
+        # 使用可重入锁，避免在 speak_text 内部调用 stop_audio 造成死锁
+        self._lock = threading.RLock()
         
         # 确保音频目录存在
         os.makedirs(self.audio_dir, exist_ok=True)
@@ -91,10 +92,10 @@ class AudioController:
         Returns:
             播报是否成功启动
         """
+        # 先停止当前播放，避免在持锁状态下嵌套调用造成死锁
+        self.stop_audio()
+
         with self._lock:
-            # 停止当前播放
-            self.stop_audio()
-            
             try:
                 # 通过管道将 espeak 音频输出到 aplay，并指定声卡
                 # 使用 plughw 以便自动完成采样率/格式转换
@@ -109,6 +110,7 @@ class AudioController:
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     preexec_fn=os.setsid,
+                    start_new_session=True,
                 )
 
                 logger.info(f"开始播报文字: {text}")
@@ -135,7 +137,7 @@ class AudioController:
                         # 回退到单进程终止
                         self.current_process.terminate()
                     # 等待进程结束
-                    self.current_process.wait(timeout=3)
+                    self.current_process.wait(timeout=2)
                     logger.info("音频播放已停止")
                     return True
                 except subprocess.TimeoutExpired:
