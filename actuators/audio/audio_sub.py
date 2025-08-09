@@ -16,16 +16,25 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'common'))
 from controller import AudioSubscriber
 
 def load_config(config_file: str) -> Dict[str, Any]:
-    """加载配置文件"""
-    config = configparser.ConfigParser()
-    config.read(config_file, encoding='utf-8')
-    
-    # 转换为字典格式
-    config_dict = {}
-    for section in config.sections():
-        config_dict[section] = dict(config[section])
-    
-    return config_dict
+    """加载配置文件并扁平化为程序需要的键名与类型"""
+    parser = configparser.ConfigParser()
+    parser.read(config_file, encoding='utf-8')
+
+    cfg: Dict[str, Any] = {}
+
+    # MQTT 配置
+    if parser.has_section('mqtt'):
+        cfg['mqtt_broker'] = parser.get('mqtt', 'broker', fallback='localhost')
+        cfg['mqtt_port'] = parser.getint('mqtt', 'port', fallback=1883)
+        cfg['topic_prefix'] = parser.get('mqtt', 'topic_prefix', fallback='actuator')
+
+    # 音频配置
+    if parser.has_section('audio'):
+        cfg['card_index'] = parser.getint('audio', 'card_index', fallback=2)
+        cfg['control_name'] = parser.get('audio', 'control_name', fallback='Headphone')
+        cfg['audio_dir'] = parser.get('audio', 'audio_dir', fallback='./tmp')
+
+    return cfg
 
 def setup_logging():
     """设置日志配置"""

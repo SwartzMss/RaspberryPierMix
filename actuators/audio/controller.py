@@ -24,6 +24,7 @@ class AudioSubscriber(MQTTSubscriber):
             'audio_dir': config.get('audio_dir', './tmp'),
         }
         
+        # 实例化音频控制器
         self.audio = AudioController(audio_conf)
         
         # 订阅音频控制主题
