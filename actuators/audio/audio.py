@@ -140,7 +140,6 @@ class AudioController:
                     shell=True,
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    preexec_fn=os.setsid,
                     start_new_session=True,
                 )
             logger.info(f"开始播报文字(在线): {text}")
