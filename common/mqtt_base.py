@@ -185,7 +185,9 @@ class MQTTSubscriber(MQTTBase):
     def on_message(self, client, userdata, msg):
         """重写消息回调，调用消息处理器"""
         try:
-            payload = json.loads(msg.payload.decode('utf-8'))
+            raw_text = msg.payload.decode('utf-8', errors='ignore')
+            logging.debug(f"MQTT 原始负载: {raw_text}")
+            payload = json.loads(raw_text)
             topic = msg.topic
             
             if self.message_handler:

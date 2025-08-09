@@ -58,15 +58,25 @@ class AudioController:
         
         try:
             cmd = f"amixer -c {self.card_index} sset {self.control_name} {volume}% unmute"
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-            
+            logger.info(f"执行音量命令: {cmd}")
+            result = subprocess.run(
+                cmd,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=3,
+            )
+
             if result.returncode == 0:
                 logger.info(f"音量设置成功: {volume}%")
                 return True
             else:
-                logger.error(f"设置音量失败: {result.stderr}")
+                logger.error(f"设置音量失败(code={result.returncode}): {result.stderr.strip()}")
                 return False
-                
+
+        except subprocess.TimeoutExpired:
+            logger.error("设置音量命令超时，可能被音频设备占用或ALSA阻塞")
+            return False
         except Exception as e:
             logger.error(f"设置音量时发生错误: {e}")
             return False
