@@ -8,7 +8,6 @@ import logging
 import subprocess
 import shlex
 import signal
-import shutil
 import threading
 import time
 import os
@@ -37,31 +36,26 @@ class AudioController:
         os.makedirs(self.audio_dir, exist_ok=True)
         
         self.control_name = config.get('control_name', 'Headphone')  # 音量控制项名称
-        # 选择可用的 TTS 命令（离线）
-        self.tts_cmd = 'espeak'
-        if shutil.which('espeak') is None and shutil.which('espeak-ng') is not None:
-            self.tts_cmd = 'espeak-ng'
 
-        # 在线TTS开关与配置
-        self.use_online_tts = bool(config.get('use_online_tts', False))
+        # 仅使用在线 TTS
         self.edge_voice = str(config.get('edge_voice', 'zh-CN-XiaoxiaoNeural'))
         self.edge_rate = str(config.get('edge_rate', '+0%'))
         self.edge_volume = str(config.get('edge_volume', '+0%'))
-        self._edge_api = None
-        if self.use_online_tts:
-            try:
-                from .edge_tts_api import EdgeTTSApi  # lazy import for optional dep
-                self._edge_api = EdgeTTSApi(
-                    voice=self.edge_voice,
-                    rate=self.edge_rate,
-                    volume=self.edge_volume,
-                )
-            except Exception as e:
-                logger.error(f"初始化在线TTS失败，将回退到离线TTS: {e}")
-                self.use_online_tts = False
+        try:
+            # 与同目录模块相对导入（audio.py 与 edge_tts_api.py 位于同一目录）
+            from edge_tts_api import EdgeTTSApi  # type: ignore
+        except Exception:
+            # 兼容从包外导入的场景
+            from actuators.audio.edge_tts_api import EdgeTTSApi  # type: ignore
+
+        self._edge_api = EdgeTTSApi(
+            voice=self.edge_voice,
+            rate=self.edge_rate,
+            volume=self.edge_volume,
+        )
 
         logger.info(
-            f"音频控制器初始化完成: card={self.card_index}, control={self.control_name}, online_tts={self.use_online_tts}"
+            f"音频控制器初始化完成: card={self.card_index}, control={self.control_name}, tts=edge_tts voice={self.edge_voice}"
         )
     
     def set_volume(self, volume: int) -> bool:
@@ -118,47 +112,34 @@ class AudioController:
 
         with self._lock:
             try:
+                # 在线TTS：获取PCM后写入临时WAV，再用 aplay 播放
+                import tempfile
+                import wave
+                import numpy as np
+
                 device = f"plughw:{self.card_index},0"
-                if self.use_online_tts and self._edge_api is not None:
-                    # 在线TTS：获取PCM后写入临时WAV，再用 aplay 播放
-                    import tempfile
-                    import wave
-                    import numpy as np
+                audio_data, sample_rate = self._edge_api.sync_text_to_audio(text)
+                if audio_data is None or sample_rate is None:
+                    logger.error("在线TTS转换失败")
+                    return False
 
-                    audio_data, sample_rate = self._edge_api.sync_text_to_audio(text)
-                    if audio_data is None or sample_rate is None:
-                        logger.error("在线TTS转换失败")
-                        return False
+                tmp_wav = tempfile.NamedTemporaryFile(delete=False, suffix='.wav', dir=self.audio_dir)
+                with wave.open(tmp_wav.name, 'wb') as wf:
+                    channels = audio_data.shape[1] if len(audio_data.shape) > 1 else 1
+                    wf.setnchannels(channels)
+                    wf.setsampwidth(2)
+                    wf.setframerate(sample_rate)
+                    wf.writeframes(np.asarray(audio_data, dtype=np.int16).tobytes())
 
-                    tmp_wav = tempfile.NamedTemporaryFile(delete=False, suffix='.wav', dir=self.audio_dir)
-                    with wave.open(tmp_wav.name, 'wb') as wf:
-                        channels = audio_data.shape[1] if len(audio_data.shape) > 1 else 1
-                        wf.setnchannels(channels)
-                        wf.setsampwidth(2)
-                        wf.setframerate(sample_rate)
-                        wf.writeframes(np.asarray(audio_data, dtype=np.int16).tobytes())
-
-                    cmd = f"aplay -q -D {device} {shlex.quote(tmp_wav.name)}"
-                    self.current_process = subprocess.Popen(
-                        cmd,
-                        shell=True,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        preexec_fn=os.setsid,
-                        start_new_session=True,
-                    )
-                else:
-                    # 离线TTS：通过管道将 espeak 音频输出到 aplay，并指定声卡
-                    safe_text = shlex.quote(text)
-                    cmd = f"{self.tts_cmd} -s 150 -v zh --stdout {safe_text} | aplay -q -D {device}"
-                    self.current_process = subprocess.Popen(
-                        cmd,
-                        shell=True,
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        preexec_fn=os.setsid,
-                        start_new_session=True,
-                    )
+                cmd = f"aplay -q -D {device} {shlex.quote(tmp_wav.name)}"
+                self.current_process = subprocess.Popen(
+                    cmd,
+                    shell=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    preexec_fn=os.setsid,
+                    start_new_session=True,
+                )
 
                 logger.info(f"开始播报文字: {text}")
                 return True

@@ -33,8 +33,7 @@ def load_config(config_file: str) -> Dict[str, Any]:
         cfg['card_index'] = parser.getint('audio', 'card_index', fallback=2)
         cfg['control_name'] = parser.get('audio', 'control_name', fallback='Headphone')
         cfg['audio_dir'] = parser.get('audio', 'audio_dir', fallback='./tmp')
-        # 在线 TTS 相关可选配置
-        cfg['use_online_tts'] = parser.getboolean('audio', 'use_online_tts', fallback=False)
+        # 在线 TTS 配置（强制在线）
         cfg['edge_voice'] = parser.get('audio', 'edge_voice', fallback='zh-CN-XiaoxiaoNeural')
         cfg['edge_rate'] = parser.get('audio', 'edge_rate', fallback='+0%')
         cfg['edge_volume'] = parser.get('audio', 'edge_volume', fallback='+0%')
