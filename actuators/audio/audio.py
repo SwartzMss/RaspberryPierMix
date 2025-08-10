@@ -51,10 +51,13 @@ class AudioController:
             # 兼容从包外导入的场景
             from actuators.audio.edge_tts_api import EdgeTTSApi  # type: ignore
 
+        # 后级增益（dB）
+        self.gain_db = float(config.get('gain_db', 0.0))
         self._edge_api = EdgeTTSApi(
             voice=self.edge_voice,
             rate=self.edge_rate,
             volume=self.edge_volume,
+            gain_db=self.gain_db,
         )
 
         logger.info(

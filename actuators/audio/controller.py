@@ -22,6 +22,7 @@ class AudioSubscriber(MQTTSubscriber):
             'card_index': config.get('card_index', 2),
             'control_name': config.get('control_name', 'Headphone'),
             'audio_dir': config.get('audio_dir', './tmp'),
+            'gain_db': config.get('gain_db', 0.0),
         }
         
         # 实例化音频控制器

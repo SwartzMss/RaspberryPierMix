@@ -18,16 +18,18 @@ class EdgeTTSApi:
         voice: str = "zh-CN-XiaoxiaoNeural",
         rate: str = "+0%",
         volume: str = "+0%",
+        gain_db: float = 0.0,
         max_retries: int = 3,
         retry_delay: float = 1.0,
     ):
         self.voice = voice
         self.rate = rate
         self.volume = volume
+        self.gain_db = float(gain_db)
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         logger.info(
-            f"初始化 EdgeTTS API: voice={voice}, rate={rate}, volume={volume}, max_retries={max_retries}"
+            f"初始化 EdgeTTS API: voice={voice}, rate={rate}, volume={volume}, gain_db={self.gain_db}, max_retries={max_retries}"
         )
 
     async def _create_communicate(self, text: str) -> edge_tts.Communicate:
@@ -82,6 +84,15 @@ class EdgeTTSApi:
                         await asyncio.sleep(self.retry_delay)
                         continue
                     return None, None
+
+                # 后级增益（dB）与限幅，防止削波
+                if abs(self.gain_db) > 1e-6:
+                    scale = float(10.0 ** (self.gain_db / 20.0))
+                    audio_float = audio_data.astype(np.float32)
+                    audio_float *= scale
+                    np.clip(audio_float, -32768.0, 32767.0, out=audio_float)
+                    audio_data = audio_float.astype(np.int16)
+                    logger.info(f"已应用后级增益: {self.gain_db} dB")
 
                 logger.info("音频数据转换完成")
                 return audio_data, snd.sample_rate

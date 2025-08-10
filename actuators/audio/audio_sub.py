@@ -37,6 +37,11 @@ def load_config(config_file: str) -> Dict[str, Any]:
         cfg['edge_voice'] = parser.get('audio', 'edge_voice', fallback='zh-CN-XiaoxiaoNeural')
         cfg['edge_rate'] = parser.get('audio', 'edge_rate', fallback='+0%')
         cfg['edge_volume'] = parser.get('audio', 'edge_volume', fallback='+0%')
+        # 后级增益（dB）
+        try:
+            cfg['gain_db'] = parser.getfloat('audio', 'gain_db', fallback=0.0)
+        except ValueError:
+            cfg['gain_db'] = 0.0
 
     return cfg
 
