@@ -80,6 +80,9 @@ class AutoScreenSwitchManager(MQTTSubscriber):
             if not motion_detected:
                 return
 
+            # 与 OLEDManager 对齐：记录收到的 PIR 事件，便于观察频次
+            self.logger.info(f"收到 pir_motion 数据: {payload}")
+
             # 有人来：立刻上报 on，并记录最近活动时间
             with self._lock:
                 self._last_motion_ts = time.time()
@@ -130,6 +133,8 @@ class AutoScreenSwitchManager(MQTTSubscriber):
 
             # 避免无谓的重复下发：只有状态变化时才发
             if self._last_state == action:
+                # 打印为 DEBUG，默认 INFO 级别不会刷屏；若需要可将服务日志级别调至 DEBUG
+                self.logger.debug(f"状态未变化，跳过重复发布: {action}（source={source}）")
                 return
 
             ok = self.publish_message(self.publish_topic, message, qos=1, retain=False)
@@ -156,10 +161,12 @@ class AutoScreenSwitchManager(MQTTSubscriber):
 def main():
     import configparser
 
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
+    # 日志级别可通过配置文件 logging.level 覆盖，默认 INFO
     config = configparser.ConfigParser()
     config.read('config.ini')
+    level_name = config.get('logging', 'level', fallback='INFO').upper()
+    log_level = getattr(logging, level_name, logging.INFO)
+    logging.basicConfig(level=log_level, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     manager_config = {
         'mqtt_broker': config.get('mqtt', 'broker', fallback='localhost'),

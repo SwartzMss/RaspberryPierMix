@@ -101,6 +101,10 @@ topic_prefix = sensor
 idle_off_seconds = 900
 # 执行器主题（发布）
 publish_topic = actuator/autoScreenSwitch
+
+[logging]
+# 日志级别（默认 INFO；设为 DEBUG 可查看被抑制的重复状态日志）
+level = INFO
 ```
 
 
@@ -124,7 +128,7 @@ mosquitto_pub -h localhost -t sensor -m '{"type":"pir_motion","params":{"motion_
 - 未收到 on/off：
   - 检查 `sensor` 是否有 `pir_motion` 且 `motion_detected=true`
   - 确认 MQTT 连接与主题名一致
-  - 查看日志是否触发去抖/去重
+  - 查看日志是否触发去抖/去重（`auto_screen_switch_manager` 为避免刷屏，默认仅在状态变化时发布；重复的 on/off 会被 DEBUG 日志提示已抑制）
 - Windows 端无响应：
   - 确认其订阅 `actuator/autoScreenSwitch`
   - 确认其解析 `action/params` JSON 负载或做了兼容逻辑
