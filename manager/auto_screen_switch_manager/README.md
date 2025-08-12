@@ -101,8 +101,6 @@ topic_prefix = sensor
 idle_off_seconds = 900
 # 执行器主题（发布）
 publish_topic = actuator/autoScreenSwitch
- # 每次检测到有人是否都发布一次 on（默认 true；若想仅状态变化时发 on，可设为 false）
- emit_on_every_motion = true
 
 [logging]
 # 日志级别（默认 INFO；设为 DEBUG 可查看被抑制的重复状态日志）
@@ -118,11 +116,11 @@ level = INFO
 mosquitto_pub -h localhost -t sensor -m '{"type":"pir_motion","params":{"motion_detected":true},"timestamp":1710000000}'
 ```
 
-预期：立即向 `actuator/autoScreenSwitch` 发布 `{"action":"on", ...}`（若 `emit_on_every_motion=true`，每次 PIR 触发都会发一次）。
+预期：立即向 `actuator/autoScreenSwitch` 发布 `{"action":"on", ...}`。
 
 2) 无人超时测试：
 
-- 触发一次“有人来”后，保持无输入超过 `idle_off_seconds`（默认 900s；任意新的 PIR 事件会重置计时器）
+- 触发一次“有人来”后，保持无输入超过 `idle_off_seconds`（默认 900s）
 - 预期：发布 `{"action":"off", ...}` 到 `actuator/autoScreenSwitch`
 
 ## 故障排除
