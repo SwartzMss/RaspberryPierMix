@@ -35,17 +35,21 @@ class AutoScreenSwitchManager(MQTTSubscriber):
         # 行为配置
         auto_cfg = {
             'idle_off_seconds': 900,
-            'publish_topic': 'actuator/autoScreenSwitch'
+            'publish_topic': 'actuator/autoScreenSwitch',
+            # 是否每次检测到有人都发布一次 on（默认 True，满足“每次有人立马发”）
+            'emit_on_every_motion': True,
         }
         if isinstance(config, dict):
             # 允许通过构建时直接传入配置覆盖
             auto_cfg.update({
                 'idle_off_seconds': config.get('idle_off_seconds', auto_cfg['idle_off_seconds']),
                 'publish_topic': config.get('publish_topic', auto_cfg['publish_topic']),
+                'emit_on_every_motion': config.get('emit_on_every_motion', auto_cfg['emit_on_every_motion']),
             })
 
         self.idle_off_seconds: int = int(auto_cfg['idle_off_seconds'])
         self.publish_topic: str = str(auto_cfg['publish_topic'])
+        self.emit_on_every_motion: bool = bool(auto_cfg['emit_on_every_motion'])
 
         # 活动/空闲状态
         self._last_motion_ts: Optional[float] = None
@@ -57,7 +61,7 @@ class AutoScreenSwitchManager(MQTTSubscriber):
         self._idle_thread_stop = threading.Event()
 
         self.logger.info(
-            f"AutoScreenSwitchManager 初始化完成（idle_off_seconds={self.idle_off_seconds}, publish_topic={self.publish_topic}）"
+            f"AutoScreenSwitchManager 初始化完成（idle_off_seconds={self.idle_off_seconds}, publish_topic={self.publish_topic}, emit_on_every_motion={self.emit_on_every_motion}）"
         )
 
     def on_connect(self, client, userdata, flags, rc):
@@ -86,6 +90,7 @@ class AutoScreenSwitchManager(MQTTSubscriber):
             # 有人来：立刻上报 on，并记录最近活动时间
             with self._lock:
                 self._last_motion_ts = time.time()
+            # 立即发布 on（是否去重由 emit_on_every_motion 控制）
             self._send_switch_command(action='on', source='pir_motion')
 
         except Exception as exc:
@@ -131,11 +136,17 @@ class AutoScreenSwitchManager(MQTTSubscriber):
                 }
             }
 
-            # 避免无谓的重复下发：只有状态变化时才发
-            if self._last_state == action:
-                # 打印为 DEBUG，默认 INFO 级别不会刷屏；若需要可将服务日志级别调至 DEBUG
-                self.logger.debug(f"状态未变化，跳过重复发布: {action}（source={source}）")
-                return
+            # 去重逻辑：
+            # - 对 off 始终去重，避免重复下发
+            # - 对 on：当 emit_on_every_motion=True 时，不做去重；否则按状态变化去重
+            if action == 'off':
+                if self._last_state == 'off':
+                    self.logger.debug("状态未变化，跳过重复发布: off")
+                    return
+            else:  # action == 'on'
+                if not self.emit_on_every_motion and self._last_state == 'on':
+                    self.logger.debug("状态未变化，跳过重复发布: on（emit_on_every_motion=False）")
+                    return
 
             ok = self.publish_message(self.publish_topic, message, qos=1, retain=False)
             if ok:
@@ -175,6 +186,7 @@ def main():
         # 行为参数（允许直接覆盖）
         'idle_off_seconds': config.getint('auto_screen_switch', 'idle_off_seconds', fallback=900),
         'publish_topic': config.get('auto_screen_switch', 'publish_topic', fallback='actuator/autoScreenSwitch'),
+        'emit_on_every_motion': config.getboolean('auto_screen_switch', 'emit_on_every_motion', fallback=True),
     }
 
     manager = AutoScreenSwitchManager(manager_config)
